@@ -1,0 +1,12 @@
+version: "3.9"
+services:
+  astra:
+    build: .
+    container_name: astra-bot
+    env_file:
+      - .env
+    volumes:
+      - ./src/astra/data:/app/src/astra/data
+    restart: unless-stopped
+    ports:
+      - "8080:8080"

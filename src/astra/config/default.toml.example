@@ -1,0 +1,24 @@
+[telegram]
+token = ""
+
+[ai]
+# 各大模型API配置
+[ai.openai]
+api_key = ""
+api_base = "https://api.openai.com/v1"
+model = "gpt-3.5-turbo"
+
+[ai.claude]
+api_key = ""
+api_base = "https://api.anthropic.com/v1"
+model = "claude-3-opus-20240229"
+
+[ai.deepseek]
+api_key = ""
+api_base = "https://api.deepseek.com/v1"
+model = "deepseek-chat"
+
+[ai.qwen]
+api_key = ""
+api_base = "https://dashscope.aliyuncs.com/api/v1"
+model = "qwen-turbo"
