@@ -49,8 +49,3 @@ def register_all_messages(application):
         application.add_handler(
             MessageHandler(filters=filters.TEXT & ~filters.COMMAND & filters.Regex(pattern), callback=func, block=True)
         )
-
-    # 未知文本消息处理器，优先级低（group=999）
-    application.add_handler(
-        MessageHandler(filters=filters.TEXT & ~filters.COMMAND, callback=handlers.unknown, block=True), group=999
-    )
