@@ -31,23 +31,17 @@ def main():
 
     try:
 
-        # 创建Bot应用
+        # 创建Bot应用并设置命令菜单
         application = Application.builder().token(token).post_init(set_commands).build()
 
-        # 设置命令菜单
-        application.post_init(set_commands)
-
-        # 注册命令
+        # 注册命令、注册消息
         register_all_handlers(application)
-
-        # 注册消息
         register_all_messages(application)
-
         # 启动Bot
-        logger.info(f"{settings.get("bot.nick_name")} 正在等待消息... 按 Ctrl+C 退出。")
+        logger.info(f"✅ Successful! {settings.get("bot.nick_name")} Bot 正在等待消息...")
         application.run_polling()
     except Exception as e:
-        logger.error(f"Bot 启动失败: {e}")
+        logger.error(f"Telegram Bot 启动失败！错误信息：{e}")
         sys.exit(2)
     finally:
-        logger.info("Bot 已关闭。")
+        logger.info("Telegram Bot 停止运行。")

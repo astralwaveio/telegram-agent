@@ -24,12 +24,11 @@ def register_all_handlers(application):
     ]
     for cmd, func in commands:
         # CommandHandler 只会匹配 /xxx 命令
-        application.add_handler(CommandHandler(cmd, func), block=True)
-        application.add_handler(CommandHandler(cmd, func))
+        application.add_handler(CommandHandler(command=cmd, callback=func, block=True))
 
     # 未知命令处理器，优先级低（group=999）
     application.add_handler(
-        MessageHandler(filters.COMMAND, handlers.unknown), group=999
+        MessageHandler(filters=filters.COMMAND, callback=handlers.unknown, block=True), group=999
     )
 
 
@@ -48,10 +47,10 @@ def register_all_messages(application):
         pattern = r"^" + re.escape(msg) + r"$"
         # 只处理非命令文本
         application.add_handler(
-            MessageHandler(filters.TEXT & ~filters.COMMAND & filters.Regex(pattern), func, block=True)
+            MessageHandler(filters=filters.TEXT & ~filters.COMMAND & filters.Regex(pattern), callback=func, block=True)
         )
 
     # 未知文本消息处理器，优先级低（group=999）
     application.add_handler(
-        MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.unknown), group=999
+        MessageHandler(filters=filters.TEXT & ~filters.COMMAND, callback=handlers.unknown, block=True), group=999
     )

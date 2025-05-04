@@ -74,10 +74,12 @@ fi
 # 重启服务
 echo "重启 astra 服务..."
 sudo systemctl stop astra.service
+sleep 0.5
 sudo systemctl start astra.service
 echo "✅ astra 服务已重启！"
 
 echo "检查服务状态..."
+sleep 1
 sudo systemctl status astra.service
 echo "✅ 服务状态检查完成！"
 exit 0
