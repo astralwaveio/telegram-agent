@@ -51,8 +51,22 @@ async def express_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return EXPRESS_INPUT
 
 
+# 新闻入口
 async def news_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.effective_chat.send_message("🚧 新闻资讯功能正在开发中，敬请期待！")
+    keyboard = [
+        [InlineKeyboardButton("返回主菜单", callback_data="news_cancel")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.effective_chat.send_message(
+        "📰 <b>新闻资讯</b>\n\n🚧 该功能正在开发中，敬请期待！",
+        parse_mode="HTML",
+        reply_markup=reply_markup
+    )
+    # 隐藏底部自定义键盘
+    await update.effective_chat.send_message(
+        "",
+        reply_markup=ReplyKeyboardRemove()
+    )
     return NEWS_INPUT
 
 
