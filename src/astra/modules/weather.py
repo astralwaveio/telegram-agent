@@ -1,6 +1,8 @@
 import csv
 import os
 
+from src.astra.modules.errors import CityNotFoundError, CityAmbiguousError
+
 WEATHER_CITYS_PATH = os.path.join(os.path.dirname(__file__), "data", "weather_citys.csv")
 
 
@@ -65,7 +67,7 @@ class WeatherCityResolver:
                                                                                                          '').replace(
             '自治县', '').replace('自治州', '').replace('盟', '').replace('旗', '').lower()
         if not q:
-            raise CityNotFoundError("请输入有效的地区名")
+            raise CityNotFoundError()
         # 1. 精确匹配
         codes = self.name_to_codes.get(q)
         if codes:
@@ -85,4 +87,4 @@ class WeatherCityResolver:
         elif len(fuzzy) > 1:
             raise CityAmbiguousError(fuzzy)
         else:
-            raise CityNotFoundError(f"未找到地区“{query}”，请补充上级地区名或检查拼写")
+            raise CityNotFoundError()
