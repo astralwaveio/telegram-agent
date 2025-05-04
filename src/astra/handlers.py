@@ -142,10 +142,8 @@ async def weather_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [[InlineKeyboardButton(city, callback_data=f"weather_{city}")] for city in popular_cities]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await update.message.reply_text(
-        "点击热门城市 OR 手动输入：",
-        reply_markup=reply_markup
-    )
+    await update.message.reply_text("点击热门城市 OR 手动输入：", reply_markup=reply_markup
+                                    )
     return WEATHER_INPUT
 
 
@@ -246,6 +244,4 @@ async def remind_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # 未知输入 Handler
 # =======================
 async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "❌ 输入格式有误，请按照提示操作。如需帮助，请发送 /help。"
-    )
+    await update.message.reply_text("⚠️输入有误，请按照提示操作，点击 /help 查看帮助。")
