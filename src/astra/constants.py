@@ -25,3 +25,15 @@ MAIN_KEYBOARD = ReplyKeyboardMarkup(
 KNOWN_COMMANDS = {
     "start", "help", "news", "remind", "tools", "cancel", "settings", "about"
 }
+
+# =======================
+# 其他
+# =======================
+# 天气默认显示城市按钮
+WEATHER_DEFAULT_CITIES = [
+    ("🏞️ 杭州", "weather_hangzhou"),
+    ("🌆 上海", "weather_shanghai"),
+    ("🏙️ 北京", "weather_beijing"),
+    ("🏞️ 漯河", "weather_luohe"),
+    # 更多城市...
+]

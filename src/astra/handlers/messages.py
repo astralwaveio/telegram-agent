@@ -6,7 +6,8 @@ from telegram.ext import (
     ContextTypes
 )
 
-from src.astra.constants import CHAT_INPUT, EXPRESS_INPUT, NEWS_INPUT, TOOLS_INPUT, REMIND_INPUT, WEATHER_INPUT
+from src.astra.constants import CHAT_INPUT, EXPRESS_INPUT, NEWS_INPUT, TOOLS_INPUT, REMIND_INPUT, WEATHER_INPUT, \
+    WEATHER_DEFAULT_CITIES
 
 
 # =======================
@@ -19,13 +20,10 @@ async def chat_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def weather_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """对话入口，提示用户输入城市或选择常用城市"""
-    keyboard = [
-        [InlineKeyboardButton("🏞️ 杭州", callback_data="weather_hangzhou")],
-        [InlineKeyboardButton("🌆 上海", callback_data="weather_shanghai")],
-        [InlineKeyboardButton("🏙️ 北京", callback_data="weather_beijing")],
-        [InlineKeyboardButton("🏞️ 漯河", callback_data="weather_luohe")],
-        [InlineKeyboardButton("🔙 返回", callback_data="weather_cancel")]
-    ]
+    city_buttons = [InlineKeyboardButton(name, callback_data=cb) for name, cb in WEATHER_DEFAULT_CITIES]
+    keyboard = [city_buttons[i:i + 3] for i in range(0, len(city_buttons), 3)]
+    keyboard.append([InlineKeyboardButton("🔙 返回", callback_data="weather_cancel")])
+
     reply_markup = InlineKeyboardMarkup(keyboard)
     msg = (
         "🌤️ <b>欢迎使用天气查询助手</b>\n\n"
