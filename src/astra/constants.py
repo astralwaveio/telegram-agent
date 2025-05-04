@@ -34,6 +34,8 @@ WEATHER_DEFAULT_CITIES = [
     ("🏞️ 杭州", "weather_hangzhou"),
     ("🌆 上海", "weather_shanghai"),
     ("🏙️ 北京", "weather_beijing"),
+    ("🏞️ 深圳", "weather_shenzhen"),
+    ("🏞️ 长沙", "weather_changsha"),
     ("🏞️ 漯河", "weather_luohe"),
     # 更多城市...
 ]
