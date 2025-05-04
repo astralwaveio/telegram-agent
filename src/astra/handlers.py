@@ -1,31 +1,176 @@
-from telegram import Update, BotCommand
-from telegram.ext import ContextTypes
+from telegram import (
+    Update, BotCommand, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
+)
+from telegram.ext import (
+    ContextTypes, ConversationHandler
+)
 
+from src.astra.config import settings
 
-async def set_bot_menu(application):
+# =======================
+# 状态常量
+# =======================
+(
+    CHAT_INPUT, WEATHER_INPUT, EXPRESS_INPUT,
+    NEWS_INPUT, TOOLS_INPUT, REMIND_INPUT
+) = range(6)
+
+# =======================
+# 主界面自定义键盘
+# =======================
+keyboards = settings.get("keyboards.rows", default=[["💬 聊天", "🌤️ 天气", "📦 快递"], ["📰 新闻", "🛠️ 工具", "⏰ 提醒"]])
+MAIN_KEYBOARD = ReplyKeyboardMarkup(
+    [[KeyboardButton(text) for text in row] for row in keyboards],
+    resize_keyboard=True
+)
+
+# =======================
+# 机器人命令设置
+# =======================
+async def set_commands(application):
     commands = [
-        BotCommand("start", "开始使用"),
-        BotCommand("help", "获取帮助"),
-        BotCommand("weather", "查询天气"),
+        BotCommand("start", "开始"),
+        BotCommand("help", "帮助"),
+        BotCommand("news", "新闻资讯"),
+        BotCommand("remind", "任务管理"),
+        BotCommand("tools", "开发工具箱"),
+        BotCommand("cancel", "取消当前操作"),
+        BotCommand("settings", "系统设置"),
         BotCommand("about", "关于Astra"),
     ]
     await application.bot.set_my_commands(commands)
 
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# =======================
+# 命令 Handler
+# =======================
+async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     bot_info = await context.bot.get_me()
-    print(f"Bot 用户名：@{bot_info.username} (ID: {bot_info.id})")
-    await update.message.reply_text("你好，我是凌云曦(Astra)，你的多AI智能体助手！\n输入 /help 查看功能。")
-
-
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # /help 命令处理
+    print(f"当前用户名：@{bot_info.username} (ID: {bot_info.id})")
     await update.message.reply_text(
-        "支持的AI模型：ChatGPT、Claude、DeepSeek、QWen。\n"
-        "你可以通过指令与不同AI对话，或配置API密钥。"
+        "你好，我是凌云曦(Astra)，你的多AI智能体助理！\n输入 /help 查看功能。",
+        reply_markup=MAIN_KEYBOARD
     )
 
 
-async def about(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # /about 命令处理
-    await update.message.reply_text("关于本Bot。")
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "🌟 欢迎使用凌云曦（Astra）多AI智能体助手！\n\n"
+        "🔹 你可以通过底部按钮或命令快速访问各项服务：\n"
+        "【主菜单命令】\n"
+        "  /start   - 进入主菜单\n"
+        "  /help    - 查看帮助信息\n"
+        "  /about   - 关于Astra\n"
+        "  /settings- 系统设置\n\n"
+        "【功能命令】\n"
+        "  /news    - 获取新闻资讯\n"
+        "  /remind  - 设置任务提醒\n"
+        "  /tools   - 开发工具箱\n"
+        "  /cancel  - 取消当前操作\n\n"
+        "【常用按钮】\n"
+        "  💬 聊天   - 智能对话（即将上线）\n"
+        "  🌤️ 天气   - 查询天气\n"
+        "  📦 快递   - 快递查询\n"
+        "  📰 新闻   - 新闻资讯\n"
+        "  🛠️ 工具   - 开发工具箱\n"
+        "  ⏰ 提醒   - 任务提醒\n\n"
+        "【使用示例】\n"
+        "  - 查询天气：点击“🌤️ 天气”或直接发送“查天气 北京”\n"
+        "  - 查快递：点击“📦 快递”并输入快递单号\n"
+        "  - 设置提醒：点击“⏰ 提醒”或使用 /remind\n\n"
+        "【常见问题FAQ】\n"
+        "  Q: 如何返回主菜单？\n"
+        "     A: 发送 /start 或 /cancel\n"
+        "  Q: 如何取消当前操作？\n"
+        "     A: 发送 /cancel\n"
+        "  Q: 机器人有哪些能力？\n"
+        "     A: 智能对话、天气、快递、新闻、工具箱等，更多功能持续开发中！\n\n"
+        "如有更多问题或建议，请随时发送消息反馈！"
+    )
+
+
+async def news_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("🚧 该功能正在开发中，敬请期待！")
+
+
+async def remind_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("🚧 该功能正在开发中，敬请期待！")
+
+
+async def tools_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("🚧 该功能正在开发中，敬请期待！")
+
+
+async def cancel_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "✅ 当前操作已取消，已返回主菜单。",
+        reply_markup=MAIN_KEYBOARD
+    )
+    return ConversationHandler.END
+
+
+async def settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("🚧 该功能正在开发中，敬请期待！")
+
+
+async def about_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "我是 👸凌云曦（Astra），你的AI智能助理。😄\n"
+        "支持智能对话、新闻资讯、开发工具、生活服务等多种功能。\n"
+        "如需帮助，请发送 /help。"
+    )
+
+
+# =======================
+# 按钮/消息 Handler
+# =======================
+async def chat_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("🚧 智能对话功能正在开发中，敬请期待！")
+    return CHAT_INPUT
+
+
+async def weather_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "请输入城市名，或发送 /cancel 取消。",
+        reply_markup=ReplyKeyboardRemove()
+    )
+    return WEATHER_INPUT
+
+
+async def weather_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    city = update.message.text.strip()
+    # 这里应接入真实天气API
+    await update.message.reply_text(
+        f"🌞 {city} 28℃ 湿度65% 空气质量优",
+        reply_markup=MAIN_KEYBOARD
+    )
+    return ConversationHandler.END
+
+
+async def express_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("🚧 快递查询功能正在开发中，敬请期待！")
+    return EXPRESS_INPUT
+
+
+async def news_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("🚧 新闻资讯功能正在开发中，敬请期待！")
+    return NEWS_INPUT
+
+
+async def tools_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("🚧 工具箱功能正在开发中，敬请期待！")
+    return TOOLS_INPUT
+
+
+async def remind_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("🚧 任务提醒功能正在开发中，敬请期待！")
+    return REMIND_INPUT
+
+
+# =======================
+# 未知输入 Handler
+# =======================
+async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "❌ 输入格式有误，请按照提示操作。如需帮助，请发送 /help。"
+    )

@@ -2,7 +2,7 @@
 import sqlite3
 import os
 
-DB_PATH = os.getenv("DATABASE_URL", "src/astra/data/astra.db").replace("sqlite:///", "")
+DB_PATH = os.getenv("DATABASE_URL", "data/astra.db").replace("sqlite:///", "")
 
 def init_db():
     conn = sqlite3.connect(DB_PATH)

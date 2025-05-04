@@ -5,8 +5,9 @@ import sys
 from dotenv import load_dotenv
 from telegram.ext import Application
 
-from .handlers import set_bot_menu
-from .register import register_all_handlers
+from .config import settings
+from .handlers import set_commands
+from .register import register_all_handlers, register_all_messages
 
 
 def main():
@@ -29,15 +30,24 @@ def main():
         sys.exit(1)
 
     try:
+        get = settings.get("bot.nick_name")
+        logger.info(f"<UNK> {get} <UNK>")
+
         # 创建Bot应用
-        app = Application.builder().token(token).post_init(set_bot_menu).build()
+        application = Application.builder().token(token).post_init(set_commands).build()
+
+        # 设置命令菜单
+        application.post_init(set_commands)
 
         # 注册命令
-        register_all_handlers(app)
+        register_all_handlers(application)
+
+        # 注册消息
+        register_all_messages(application)
 
         # 启动Bot
-        logger.info("凌云曦(Astra) Telegram Bot 正在等待消息... 按 Ctrl+C 退出。")
-        app.run_polling()
+        logger.info(f"{settings.get("bot.nick_name")} 正在等待消息... 按 Ctrl+C 退出。")
+        application.run_polling()
     except Exception as e:
         logger.error(f"Bot 启动失败: {e}")
         sys.exit(2)

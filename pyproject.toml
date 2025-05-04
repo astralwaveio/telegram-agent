@@ -7,7 +7,7 @@ name = "astra"
 version = "0.1.0"
 description = "凌云曦(Astra): 基于Telegram的多AI智能体"
 authors = [{ name = "Astral Wave", email = "jonny6015@icloud.com" }]
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 readme = "README.md"
 license = { file = "LICENSE" }
 dependencies = [
