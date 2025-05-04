@@ -25,9 +25,11 @@ jobs:
           TARGET: ${{ secrets.DEPLOY_DIR }}
           SCRIPT_BEFORE: |
             echo "🚀 开始清理旧的虚拟环境 ..."
-            cd ${{ secrets.DEPLOY_DIR }} && rm -rf venv
+            cd ${{ secrets.DEPLOY_DIR }} && sudo rm -rf venv
+            echo "当前目录：$(pwd)"
             echo "✅ 清理完毕"
           SCRIPT_AFTER: |
             echo "🚀 开始部署 ..."
-            cd ${{ secrets.DEPLOY_DIR }} && bash scripts/check_and_deploy.sh
+            echo "当前目录：$(pwd)"
+            cd ${{ secrets.DEPLOY_DIR }} && sudo bash scripts/check_and_deploy.sh
             echo "✅ 部署完毕"
