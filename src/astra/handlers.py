@@ -12,6 +12,7 @@ from telegram.ext import (
 from src.astra.config import settings
 from src.astra.modules.errors import CityNotFoundError, CityAmbiguousError
 from src.astra.modules.weather import WeatherCityResolver
+from src.astra.register import KNOWN_COMMANDS
 
 # =======================
 # 状态常量
@@ -244,4 +245,24 @@ async def remind_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # 未知输入 Handler
 # =======================
 async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # 获取用户输入的命令名
+    text = update.message.text
+    command = extract_command(text)
+    if command in KNOWN_COMMANDS:
+        return
     await update.message.reply_text("⚠️输入有误，请按照提示操作，点击 /help 查看帮助。")
+
+
+def extract_command(text):
+    """
+    从消息文本中提取命令名，兼容 /cmd、/cmd@botname、/cmd@botname 参数、/cmd 参数
+    """
+    if not text.startswith("/"):
+        return None
+    # 取第一个单词（防止有参数）
+    first_word = text.split()[0]
+    # 去掉开头的 /
+    command = first_word[1:]
+    # 去掉 @botname
+    command = command.split("@")[0]
+    return command

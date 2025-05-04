@@ -2,6 +2,10 @@ import re
 from telegram.ext import CommandHandler, MessageHandler, filters
 from . import handlers
 
+KNOWN_COMMANDS = {
+    "start", "help", "news", "remind", "tools", "cancel", "settings", "about"
+}
+
 def register_all_handlers(application):
     # 注册已知命令
     commands = [
