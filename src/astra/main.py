@@ -30,8 +30,6 @@ def main():
         sys.exit(1)
 
     try:
-        get = settings.get("bot.nick_name")
-        logger.info(f"<UNK> {get} <UNK>")
 
         # 创建Bot应用
         application = Application.builder().token(token).post_init(set_commands).build()

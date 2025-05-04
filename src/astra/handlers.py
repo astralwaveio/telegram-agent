@@ -10,6 +10,8 @@ from telegram.ext import (
 )
 
 from src.astra.config import settings
+from src.astra.modules.errors import CityNotFoundError, CityAmbiguousError
+from src.astra.modules.weather import WeatherCityResolver
 
 # =======================
 # 状态常量
@@ -135,20 +137,32 @@ async def chat_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def weather_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    popular_cities = ["杭州市富阳区", "杭州市西湖区", "杭州", "上海", "漯河市"]
+    popular_cities = ["杭州富阳", "杭州西湖", "上海", "漯河市"]
 
     keyboard = [[InlineKeyboardButton(city, callback_data=f"weather_{city}")] for city in popular_cities]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await update.message.reply_text(
-        "请选择一个热门城市或发送城市名称手动查询：",
+        "点击热门城市 OR 手动输入：",
         reply_markup=reply_markup
     )
     return WEATHER_INPUT
 
 
 async def weather_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    city = update.message.text.strip()
+    city_code = update.message.text.strip()
+    try:
+        city_code = WeatherCityResolver().resolve(city_code)
+    except (CityNotFoundError, CityAmbiguousError) as e:
+        await update.message.reply_text(f'{e.message}')
+        return WEATHER_INPUT
+    city_code_prefixes = (
+        "WX", "WW", "WQ", "WR", "Y8", "YB", "Y9", "WP", "WZ", "YC", "WT", "WS", "WM", "WK", "WE",
+        "W7", "W6", "W9", "WD", "WJ", "WH", "W5", "TV", "TU", "TY", "WN", "TZ", "VB", "TX", "TW", "Y0"
+    )
+    if not city_code.startswith(city_code_prefixes):
+        await update.message.reply_text("暂不支持该城市，请重新输入。")
+        return WEATHER_INPUT
 
     # 构造请求URL（根据知心天气文档）
     base_url = "https://api.seniverse.com/v3/weather/"
@@ -160,7 +174,7 @@ async def weather_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"{base_url}now.json",
             params={
                 "key": private_key,
-                "location": city,
+                "location": city_code,
                 "language": "zh-Hans",
                 "unit": "c"
             }
@@ -171,7 +185,7 @@ async def weather_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"{base_url}daily.json",
             params={
                 "key": private_key,
-                "location": city,
+                "location": city_code,
                 "language": "zh-Hans",
                 "unit": "c",
                 "start": 0,
@@ -189,7 +203,7 @@ async def weather_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # 构建回复内容
     reply_text = (
-        f"🌤️ {city} 实时天气：\n"
+        f"🌤️ {update.message.text.strip()} 实时天气：\n"
         f"温度：{now_data['temperature']}°C\n"
         f"天气：{now_data['text_day']}\n"
         f"湿度：{now_data['humidity']}%\n"
