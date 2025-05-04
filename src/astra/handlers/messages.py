@@ -2,7 +2,7 @@ import logging
 
 from telegram import (
     Update, InlineKeyboardButton,
-    InlineKeyboardMarkup
+    InlineKeyboardMarkup, ReplyKeyboardRemove
 )
 from telegram.ext import (
     ContextTypes
@@ -38,6 +38,10 @@ async def weather_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
         msg,
         reply_markup=reply_markup,
         parse_mode="HTML"
+    )
+    await update.effective_chat.send_message(
+        "已进入天气查询模式，底部菜单已隐藏。",
+        reply_markup=ReplyKeyboardRemove()
     )
     return WEATHER_INPUT
 
