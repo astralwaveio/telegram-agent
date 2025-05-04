@@ -1,16 +1,16 @@
 #!/bin/bash
 set -e
 
+cd /opt/telegram-agent
+
 # 检查 Python3
 if ! command -v python3 &>/dev/null; then
     echo "Python3 未安装或环境变量未配置，请检查！"
 fi
 
-# 检查虚拟环境
-if [ ! -d "venv" ]; then
-    echo "创建 Python 虚拟环境..."
-    python3 -m venv venv
-fi
+rm -rf venv
+echo "创建 Python 虚拟环境..."
+python3 -m venv venv
 
 # 激活虚拟环境
 source venv/bin/activate

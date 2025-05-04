@@ -23,7 +23,7 @@ jobs:
           REMOTE_PORT: ${{ secrets.REMOTE_PORT }}
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
           TARGET: ${{ secrets.DEPLOY_DIR }}
+          SCRIPT_BEFORE: |
+            cd ${{ secrets.DEPLOY_DIR }} && rm -rf venv
           SCRIPT_AFTER: |
-            cd ${{ secrets.DEPLOY_DIR }}
-            ls -al
-            bash scripts/check_and_deploy.sh
+            cd ${{ secrets.DEPLOY_DIR }} && bash scripts/check_and_deploy.sh
