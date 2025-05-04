@@ -87,7 +87,7 @@ async def tools_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def cancel_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.effective_chat.send_message(
-        "✅ 当前操作已取消，已返回主菜单。",
+        "🏠 取消当前操作，已返回主菜单。",
         reply_markup=MAIN_KEYBOARD
     )
     return ConversationHandler.END

@@ -13,7 +13,7 @@ async def weather_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     if query.data == "weather_cancel":
-        await query.edit_message_text("🔙 <b>已返回</b>\n期待下次为你服务！", parse_mode="HTML")
+        await query.edit_message_text("期待下次为你服务！😊", parse_mode="HTML")
         return ConversationHandler.END
 
     city_map = {
