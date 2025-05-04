@@ -9,9 +9,9 @@ SUPPORTED_MODELS = ["openai", "claude", "deepseek", "qwen"]
 # 底部按钮
 # =======================
 (
-    CHAT_INPUT, WEATHER_INPUT, EXPRESS_INPUT,
+    CHAT_INPUT, WEATHER_INPUT, WEATHER_RESULT, EXPRESS_INPUT,
     NEWS_INPUT, TOOLS_INPUT, REMIND_INPUT
-) = range(6)
+) = range(7)
 
 keyboards = settings.get("keyboards.rows", default=[[]])
 MAIN_KEYBOARD = ReplyKeyboardMarkup(

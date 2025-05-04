@@ -1,14 +1,18 @@
 import re
+from warnings import filterwarnings
 
 from telegram import Update
 from telegram.ext import CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler, \
     CallbackQueryHandler
+from telegram.warnings import PTBUserWarning
 
-from src.astra.constants import KNOWN_COMMANDS, WEATHER_INPUT
+from src.astra.constants import KNOWN_COMMANDS, WEATHER_INPUT, WEATHER_RESULT
 from src.astra.handlers.commands import start_command, help_command, news_command, remind_command, tools_command, \
     cancel_command, settings_command, about_command
 from src.astra.handlers.messages import chat_entry, weather_entry, express_entry, news_entry, tools_entry, remind_entry
-from src.astra.modules.weather import weather_button, weather_input, weather_cancel
+from src.astra.modules.weather import weather_button, weather_input, weather_cancel, weather_exit_callback
+
+filterwarnings(action="ignore", message=r".*CallbackQueryHandler", category=PTBUserWarning)
 
 
 def register_all_handlers(application):
@@ -32,6 +36,9 @@ def register_all_conversations(application):
             WEATHER_INPUT: [
                 CallbackQueryHandler(weather_button, pattern=r"^weather_"),
                 MessageHandler(filters.TEXT & ~filters.COMMAND, weather_input)
+            ],
+            WEATHER_RESULT: [
+                CallbackQueryHandler(weather_exit_callback, pattern="^weather_exit$")
             ],
         },
         fallbacks=[CommandHandler('cancel', weather_cancel)],
@@ -96,7 +103,7 @@ async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
     command = extract_command(text)
     if command in KNOWN_COMMANDS:
         return
-    await update.message.reply_text("⚠️输入有误，请按照提示操作，点击 /help 查看帮助。")
+    await update.effective_chat.send_message("⚠️输入有误，请按照提示操作，点击 /help 查看帮助。")
 
 
 def extract_command(text):

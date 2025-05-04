@@ -31,14 +31,14 @@ async def set_commands(application):
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     bot_info = await context.bot.get_me()
     print(f"当前用户名：@{bot_info.username} (ID: {bot_info.id})")
-    await update.message.reply_text(
+    await update.effective_chat.send_message(
         "你好，我是凌云曦(Astra)，你的多AI智能体助理！\n输入 /help 查看功能。",
         reply_markup=MAIN_KEYBOARD
     )
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
+    await update.effective_chat.send_message(
         "🌟 欢迎使用凌云曦（Astra）多AI智能体助手！\n\n"
         "🔹 你可以通过底部按钮或命令快速访问各项服务：\n"
         "【主菜单命令】\n"
@@ -74,19 +74,19 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def news_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("🚧 该功能正在开发中，敬请期待！")
+    await update.effective_chat.send_message("🚧 该功能正在开发中，敬请期待！")
 
 
 async def remind_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("🚧 该功能正在开发中，敬请期待！")
+    await update.effective_chat.send_message("🚧 该功能正在开发中，敬请期待！")
 
 
 async def tools_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("🚧 该功能正在开发中，敬请期待！")
+    await update.effective_chat.send_message("🚧 该功能正在开发中，敬请期待！")
 
 
 async def cancel_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
+    await update.effective_chat.send_message(
         "✅ 当前操作已取消，已返回主菜单。",
         reply_markup=MAIN_KEYBOARD
     )
@@ -94,11 +94,11 @@ async def cancel_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("🚧 该功能正在开发中，敬请期待！")
+    await update.effective_chat.send_message("🚧 该功能正在开发中，敬请期待！")
 
 
 async def about_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
+    await update.effective_chat.send_message(
         "我是 👸凌云曦（Astra），你的AI智能助理。😄\n"
         "支持智能对话、新闻资讯、开发工具、生活服务等多种功能。\n"
         "如需帮助，请发送 /help。"

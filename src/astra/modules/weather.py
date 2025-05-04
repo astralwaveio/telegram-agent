@@ -1,180 +1,164 @@
-import csv
 import os
 
-import httpx
-from telegram import Update
+import requests
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, ConversationHandler
 
-from src.astra.modules.errors import CityNotFoundError, CityAmbiguousError
+from src.astra.constants import WEATHER_INPUT, WEATHER_RESULT
 
 WEATHER_CITYS_PATH = os.path.join(os.path.dirname(__file__), "data", "weather_citys.csv")
 
 
-class WeatherCityResolver:
-    def __init__(self):
-        self.city_data = []
-        self.name_to_codes = {}
-        self._load_csv(WEATHER_CITYS_PATH)
-
-    def _load_csv(self, csv_path):
-        with open(csv_path, encoding='utf-8') as f:
-            reader = csv.reader(f)
-            for row in reader:
-                code, full_cn, short_cn, en = row
-                levels = full_cn.replace('省', '').replace('市', '').replace('区', '').replace('县', '').replace(
-                    '自治县', '').replace('自治州', '').replace('盟', '').replace('旗', '').split('/')
-                levels = [x for x in levels if x]
-                self.city_data.append({
-                    'code': code,
-                    'full_cn': full_cn,
-                    'short_cn': short_cn,
-                    'en': en,
-                    'levels': levels
-                })
-                names = set()
-                # 顶级地区
-                if len(levels) == 1:
-                    names.add(levels[0])
-                    for part in short_cn.split('/'):
-                        names.add(
-                            part.replace('市', '').replace('区', '').replace('县', '').replace('自治县', '').replace(
-                                '自治州', '').replace('盟', '').replace('旗', ''))
-                    names.add(
-                        full_cn.replace('/', '').replace('省', '').replace('市', '').replace('区', '').replace('县',
-                                                                                                               '').replace(
-                            '自治县', '').replace('自治州', '').replace('盟', '').replace('旗', ''))
-                # 其他组合
-                for i in range(len(levels)):
-                    if i > 0:
-                        names.add(''.join(levels[i:]))
-                        names.add(''.join(levels[:i + 1]))
-                # 拼音支持
-                names.add(en.lower())
-                names.add(en)  # 保留原始拼音（兼容极端情况）
-                # 上级+本级
-                if len(levels) >= 2:
-                    names.add(levels[-2] + levels[-1])
-                # 原始短名
-                names.add(short_cn.replace('/', '').replace('省', '').replace('市', '').replace('区', '').replace('县',
-                                                                                                                  '').replace(
-                    '自治县', '').replace('自治州', '').replace('盟', '').replace('旗', ''))
-                # 去重并注册
-                for name in names:
-                    key = name.strip().lower()
-                    if not key:
-                        continue
-                    self.name_to_codes.setdefault(key, set()).add(code)
-
-    def weather_resolve(self, query):
-        """解析地区名，返回唯一编码。支持拼音（不区分大小写）"""
-        q = query.strip().replace(' ', '').replace('省', '').replace('市', '').replace('区', '').replace('县',
-                                                                                                         '').replace(
-            '自治县', '').replace('自治州', '').replace('盟', '').replace('旗', '').lower()
-        if not q:
-            raise CityNotFoundError()
-        # 1. 精确匹配
-        codes = self.name_to_codes.get(q)
-        if codes:
-            if len(codes) == 1:
-                return list(codes)[0]
-            else:
-                raise CityAmbiguousError(codes)
-        # 2. 模糊匹配（包含关系）
-        fuzzy = []
-        for name, codeset in self.name_to_codes.items():
-            if q in name:
-                for code in codeset:
-                    fuzzy.append(code)
-        fuzzy = list(set(fuzzy))
-        if len(fuzzy) == 1:
-            return fuzzy[0]
-        elif len(fuzzy) > 1:
-            raise CityAmbiguousError(fuzzy)
-        else:
-            raise CityNotFoundError()
-
-
-# 处理按钮选择
 async def weather_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    city = query.data.replace("weather_", "")
-    weather_info = await weather_query(city)
-    await query.edit_message_text(weather_info)
+    if query.data == "weather_cancel":
+        await query.edit_message_text("🔙 <b>已返回</b>\n期待下次为你服务！", parse_mode="HTML")
+        return ConversationHandler.END
+
+    city_map = {
+        "weather_hangzhou": ("杭州", 120.1551, 30.2741),
+        "weather_shanghai": ("上海", 121.4737, 31.2304),
+        "weather_beijing": ("北京", 116.4074, 39.9042),
+        "weather_luohe": ("漯河", 114.0168, 33.5815),
+    }
+    key = query.data
+    if key in city_map:
+        city, lon, lat = city_map[key]
+        weather_info = get_weather_detail(lon, lat)
+        await send_weather_result(update, context, city, weather_info)
+        return WEATHER_RESULT
+    else:
+        await query.edit_message_text("⚠️ 未识别的城市按钮。", parse_mode="HTML")
     return ConversationHandler.END
 
 
-# 处理手动输入
 async def weather_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
     city = update.message.text.strip()
-    weather_info = await weather_query(city)
-    await update.message.reply_text(weather_info)
+    city_map = {
+        "杭州": (120.1551, 30.2741),
+        "上海": (121.4737, 31.2304),
+        "北京": (116.4074, 39.9042),
+        "漯河": (114.0168, 33.5815),
+    }
+    if city in city_map:
+        lon, lat = city_map[city]
+        weather_info = get_weather_detail(lon, lat)
+        await send_weather_result(update, context, city, weather_info)
+        return WEATHER_RESULT
+    else:
+        await update.update.effective_chat.send_message(
+            "⚠️ <b>暂不支持该城市</b>\n\n"
+            "目前仅支持：<b>杭州</b>、<b>上海</b>、<b>北京</b>、<b>漯河</b>\n"
+            "请重新输入城市名，或点击下方按钮。",
+            parse_mode="HTML"
+        )
+        return WEATHER_INPUT
+
+
+async def send_weather_result(update, context, city, weather_info):
+    """发送天气结果并附带退出按钮"""
+    keyboard = [
+        [InlineKeyboardButton("🔚 退出", callback_data="weather_exit")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.effective_chat.send_message(
+        f"📍 <b>{city}</b>天气：\n\n{weather_info}",
+        reply_markup=reply_markup,
+        parse_mode="HTML"
+    )
+
+
+async def weather_exit_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """处理退出按钮，发送退出提示，不删除原消息"""
+    query = update.callback_query
+    await query.answer()
+    await update.effective_chat.send_message("🔚 已退出当前操作。", parse_mode="HTML")
     return ConversationHandler.END
 
 
-# 取消
 async def weather_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("已取消天气查询。")
+    await update.update.effective_chat.send_message("<b>已取消天气查询</b>\n期待下次为你服务！", parse_mode="HTML")
     return ConversationHandler.END
 
 
-# 天气查询
-async def weather_query(city: str):
-    city_code = city.strip()
+def get_weather_detail(lon, lat):
+    """获取详细天气信息（7天预报+生活指数+实时）"""
+    caiyun_token = os.environ.get("CAIYUN_TOKEN")
+    # 实时天气
+    realtime_url = f"https://api.caiyunapp.com/v2.6/{caiyun_token}/{lon},{lat}/realtime"
+    # 7天预报+生活指数
+    daily_url = f"https://api.caiyunapp.com/v2.6/{caiyun_token}/{lon},{lat}/daily?dailysteps=7"
     try:
-        city_code = WeatherCityResolver().weather_resolve(city_code)
-    except (CityNotFoundError, CityAmbiguousError) as e:
-        return e.message
-    city_code_prefixes = (
-        "WX", "WW", "WQ", "WR", "Y8", "YB", "Y9", "WP", "WZ", "YC", "WT", "WS", "WM", "WK", "WE",
-        "W7", "W6", "W9", "WD", "WJ", "WH", "W5", "TV", "TU", "TY", "WN", "TZ", "VB", "TX", "TW", "Y0"
-    )
-    if not city_code.startswith(city_code_prefixes):
-        return "暂不支持该城市，请重新输入。"
-    # 构造请求URL
-    base_url = "https://api.seniverse.com/v3/weather"
-    async with httpx.AsyncClient() as client:
-        private_key = os.getenv("XINZHI_PRI_KEY")
-        # 查询实时天气
-        now_response = await client.get(
-            f"{base_url}/now.json",
-            params={
-                "key": private_key,
-                "location": city_code,
-                "language": "zh-Hans",
-                "unit": "c"
-            }
+        realtime = requests.get(realtime_url, timeout=5).json()
+        daily = requests.get(daily_url, timeout=5).json()
+        # 解析实时天气
+        rt = realtime.get("result", {}).get("realtime", {})
+        temp = rt.get("temperature")
+        skycon = rt.get("skycon")
+        desc, emoji = skycon_desc(skycon)
+        humidity = rt.get("humidity", None)
+        humidity_str = f"{int(humidity * 100)}%" if humidity is not None else "未知"
+        wind_speed = rt.get("wind", {}).get("speed", None)
+        wind_str = f"{wind_speed} m/s" if wind_speed is not None else "未知"
+        aqi = rt.get("air_quality", {}).get("aqi", {}).get("chn", None)
+        aqi_str = f"{aqi}" if aqi is not None else "未知"
+
+        # 解析生活指数（当天）
+        life_index = daily.get("result", {}).get("daily", {}).get("life_index", {})
+        dressing = life_index.get("dressing", [{}])[0]
+        dressing_desc = dressing.get("desc", "暂无建议")
+        uv = life_index.get("ultraviolet", [{}])[0]
+        uv_desc = uv.get("desc", "暂无建议")
+        cold = life_index.get("coldRisk", [{}])[0]
+        cold_desc = cold.get("desc", "暂无建议")
+        car_washing = life_index.get("carWashing", [{}])[0]
+        car_washing_desc = car_washing.get("desc", "暂无建议")
+
+        # 解析7天预报
+        daily_data = daily.get("result", {}).get("daily", {})
+        dates = daily_data.get("date", [])
+        skycons = daily_data.get("skycon", [])
+        temp_max = daily_data.get("temperature", [])
+        msg_7d = ""
+        for i in range(min(7, len(dates))):
+            day = dates[i]
+            sky = skycon_desc(skycons[i]['value'])[0] if i < len(skycons) else "未知"
+            tmax = temp_max[i]['max'] if i < len(temp_max) else "?"
+            tmin = temp_max[i]['min'] if i < len(temp_max) else "?"
+            msg_7d += f"{day[5:]} {sky} {tmin}~{tmax}℃\n"
+
+        # 组装消息
+        msg = (
+            f"{emoji} <b>当前天气</b>\n"
+            f"🌡️ 温度：<b>{temp}℃</b>\n"
+            f"🌥️ 天气：<b>{desc}</b>\n"
+            f"💧 湿度：<b>{humidity_str}</b>\n"
+            f"💨 风速：<b>{wind_str}</b>\n"
+            f"🌫️ 空气质量指数：<b>{aqi_str}</b>\n"
+            f"\n👕 <b>穿衣指数</b>：{dressing_desc}\n"
+            f"🌞 <b>紫外线</b>：{uv_desc}\n"
+            f"🤧 <b>感冒风险</b>：{cold_desc}\n"
+            f"🚗 <b>洗车指数</b>：{car_washing_desc}\n"
+            f"\n📅 <b>未来7天天气</b>：\n"
+            f"<pre>{msg_7d}</pre>\n数据来源：彩云天气"
         )
-        # 查询未来三天天气
-        forecast_response = await client.get(
-            f"{base_url}/daily.json",
-            params={
-                "key": private_key,
-                "location": city_code,
-                "language": "zh-Hans",
-                "unit": "c",
-                "start": 0,
-                "days": 3
-            }
-        )
-    # 检查响应状态码
-    if now_response.status_code != 200 or forecast_response.status_code != 200:
-        return "无法获取天气数据，请稍后再试。"
-    now_data = now_response.json()["results"][0]["now"]
-    forecast_data = forecast_response.json()["results"][0]["daily"]
-    # 构建回复内容
-    reply_text = (
-        f"🌤️ {city.strip()} 实时天气：\n"
-        f"温度：{now_data['temperature']}°C\n"
-        f"天气：{now_data['text_day']}\n"
-        f"湿度：{now_data['humidity']}%\n"
-        f"风速：{now_data['wind_scale']}级 风力：{now_data['wind_direction']}\n\n"
-        f"📅 未来三天天气预报：\n"
-        f"1. {forecast_data[0]['date']}：{forecast_data[0]['text_day']} / {forecast_data[0]['text_night']}，"
-        f"{forecast_data[0]['low']}°C ~ {forecast_data[0]['high']}°C\n"
-        f"2. {forecast_data[1]['date']}：{forecast_data[1]['text_day']} / {forecast_data[1]['text_night']}，"
-        f"{forecast_data[1]['low']}°C ~ {forecast_data[1]['high']}°C\n"
-        f"3. {forecast_data[2]['date']}：{forecast_data[2]['text_day']} / {forecast_data[2]['text_night']}，"
-        f"{forecast_data[2]['low']}°C ~ {forecast_data[2]['high']}°C\n"
-    )
-    return reply_text
+        return msg
+    except Exception as e:
+        return f"⚠️ <b>获取天气失败</b>\n请稍后再试。\n\n<code>{e}</code>"
+
+
+def skycon_desc(skycon):
+    """天气现象代码转中文+emoji"""
+    mapping = {
+        "CLEAR_DAY": ("晴天", "☀️"),
+        "CLEAR_NIGHT": ("晴夜", "🌙"),
+        "PARTLY_CLOUDY_DAY": ("多云", "⛅"),
+        "PARTLY_CLOUDY_NIGHT": ("多云夜", "🌤️"),
+        "CLOUDY": ("阴", "☁️"),
+        "RAIN": ("雨", "🌧️"),
+        "SNOW": ("雪", "❄️"),
+        "WIND": ("大风", "💨"),
+        "HAZE": ("雾霾", "🌫️"),
+    }
+    return mapping.get(skycon, (skycon, "❓"))
