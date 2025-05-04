@@ -1,5 +1,9 @@
+import os
+
+import httpx
 from telegram import (
-    Update, BotCommand, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
+    Update, BotCommand, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton,
+    InlineKeyboardMarkup
 )
 from telegram.ext import (
     ContextTypes, ConversationHandler
@@ -23,6 +27,7 @@ MAIN_KEYBOARD = ReplyKeyboardMarkup(
     [[KeyboardButton(text) for text in row] for row in keyboards],
     resize_keyboard=True
 )
+
 
 # =======================
 # 机器人命令设置
@@ -130,20 +135,76 @@ async def chat_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def weather_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    popular_cities = ["杭州市富阳区", "杭州市西湖区", "杭州", "上海", "漯河市"]
+
+    keyboard = [[InlineKeyboardButton(city, callback_data=f"weather_{city}")] for city in popular_cities]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
     await update.message.reply_text(
-        "请输入城市名，或发送 /cancel 取消。",
-        reply_markup=ReplyKeyboardRemove()
+        "请选择一个热门城市或发送城市名称手动查询：",
+        reply_markup=reply_markup
     )
     return WEATHER_INPUT
 
 
 async def weather_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
     city = update.message.text.strip()
-    # 这里应接入真实天气API
-    await update.message.reply_text(
-        f"🌞 {city} 28℃ 湿度65% 空气质量优",
-        reply_markup=MAIN_KEYBOARD
+
+    # 构造请求URL（根据知心天气文档）
+    base_url = "https://api.seniverse.com/v3/weather/"
+
+    async with httpx.AsyncClient() as client:
+        private_key = os.getenv("XINZHI_PRI_KEY")
+        # 查询实时天气
+        now_response = await client.get(
+            f"{base_url}now.json",
+            params={
+                "key": private_key,
+                "location": city,
+                "language": "zh-Hans",
+                "unit": "c"
+            }
+        )
+
+        # 查询未来三天天气
+        forecast_response = await client.get(
+            f"{base_url}daily.json",
+            params={
+                "key": private_key,
+                "location": city,
+                "language": "zh-Hans",
+                "unit": "c",
+                "start": 0,
+                "days": 3
+            }
+        )
+
+    # 检查响应状态码
+    if now_response.status_code != 200 or forecast_response.status_code != 200:
+        await update.message.reply_text("无法获取天气数据，请稍后再试。")
+        return ConversationHandler.END
+
+    now_data = now_response.json()["results"][0]["now"]
+    forecast_data = forecast_response.json()["results"][0]["daily"]
+
+    # 构建回复内容
+    reply_text = (
+        f"🌤️ {city} 实时天气：\n"
+        f"温度：{now_data['temperature']}°C\n"
+        f"天气：{now_data['text_day']}\n"
+        f"湿度：{now_data['humidity']}%\n"
+        f"风速：{now_data['wind_scale']}级 风力：{now_data['wind_direction']}\n\n"
+
+        f"📅 未来三天天气预报：\n"
+        f"1. {forecast_data[0]['date']}：{forecast_data[0]['text_day']} / {forecast_data[0]['text_night']}，"
+        f"{forecast_data[0]['low']}°C ~ {forecast_data[0]['high']}°C\n"
+        f"2. {forecast_data[1]['date']}：{forecast_data[1]['text_day']} / {forecast_data[1]['text_night']}，"
+        f"{forecast_data[1]['low']}°C ~ {forecast_data[1]['high']}°C\n"
+        f"3. {forecast_data[2]['date']}：{forecast_data[2]['text_day']} / {forecast_data[2]['text_night']}，"
+        f"{forecast_data[2]['low']}°C ~ {forecast_data[2]['high']}°C\n"
     )
+
+    await update.message.reply_text(reply_text, reply_markup=MAIN_KEYBOARD)
     return ConversationHandler.END
 
 
