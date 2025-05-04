@@ -24,6 +24,10 @@ jobs:
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
           TARGET: ${{ secrets.DEPLOY_DIR }}
           SCRIPT_BEFORE: |
+            echo "🚀 开始清理旧的虚拟环境 ..."
             cd ${{ secrets.DEPLOY_DIR }} && rm -rf venv
+            echo "✅ 清理完毕"
           SCRIPT_AFTER: |
+            echo "🚀 开始部署 ..."
             cd ${{ secrets.DEPLOY_DIR }} && bash scripts/check_and_deploy.sh
+            echo "✅ 部署完毕"
