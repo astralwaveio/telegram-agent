@@ -1,3 +1,5 @@
+import logging
+
 from telegram import (
     Update, InlineKeyboardButton,
     InlineKeyboardMarkup
@@ -8,6 +10,8 @@ from telegram.ext import (
 
 from src.astra.constants import CHAT_INPUT, EXPRESS_INPUT, NEWS_INPUT, TOOLS_INPUT, REMIND_INPUT, WEATHER_INPUT, \
     WEATHER_DEFAULT_CITIES
+
+logger = logging.getLogger("message")
 
 
 # =======================

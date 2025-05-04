@@ -8,6 +8,7 @@ from telegram.ext import Application
 from src.astra.handlers.register import register_all_handlers
 from .config import settings
 from .handlers.commands import set_commands
+from .modules.tasks import start_background_tasks
 
 
 def main():
@@ -36,6 +37,9 @@ def main():
 
         # 注册处理器
         register_all_handlers(application)
+
+        # 启动所有后台线程任务
+        start_background_tasks(application)
 
         # 启动Bot
         logger.info(f"✅ Successful! {settings.get("bot.nick_name")} Bot 正在等待消息...")

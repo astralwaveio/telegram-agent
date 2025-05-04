@@ -47,7 +47,7 @@ async def weather_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await send_weather_result(update, context, city, weather_info)
         return WEATHER_RESULT
     else:
-        await update.update.effective_chat.send_message(
+        await update.effective_chat.send_message(
             "⚠️ <b>暂不支持该城市</b>\n\n"
             "目前仅支持：<b>杭州</b>、<b>上海</b>、<b>北京</b>、<b>漯河</b>\n"
             "请重新输入城市名，或点击下方按钮。",
@@ -78,7 +78,7 @@ async def weather_exit_callback(update: Update, context: ContextTypes.DEFAULT_TY
 
 
 async def weather_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.update.effective_chat.send_message("<b>已取消天气查询</b>\n期待下次为你服务！", parse_mode="HTML")
+    await update.effective_chat.send_message("<b>已取消天气查询</b>\n期待下次为你服务！", parse_mode="HTML")
     return ConversationHandler.END
 
 
