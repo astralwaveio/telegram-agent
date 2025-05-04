@@ -66,6 +66,6 @@ fi
 
 # 重启服务
 echo "重启 astra 服务..."
-sudo systemctl restart astra.service
-
+sudo systemctl stop astra.service
+sudo systemctl start astra.service
 echo "部署完成！"
