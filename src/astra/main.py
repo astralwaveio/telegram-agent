@@ -5,9 +5,9 @@ import sys
 from dotenv import load_dotenv
 from telegram.ext import Application
 
+from src.astra.handlers.register import register_all_handlers
 from .config import settings
-from .handlers import set_commands
-from .register import register_all_handlers, register_all_messages
+from .handlers.commands import set_commands
 
 
 def main():
@@ -34,9 +34,9 @@ def main():
         # 创建Bot应用并设置命令菜单
         application = Application.builder().token(token).post_init(set_commands).build()
 
-        # 注册命令、注册消息
+        # 注册处理器
         register_all_handlers(application)
-        register_all_messages(application)
+
         # 启动Bot
         logger.info(f"✅ Successful! {settings.get("bot.nick_name")} Bot 正在等待消息...")
         application.run_polling()
