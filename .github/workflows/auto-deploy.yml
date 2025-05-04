@@ -1,4 +1,4 @@
-name: Auto Deploy
+name: ⭐ 自动部署 Telegram Agent
 
 on:
   workflow_dispatch:
@@ -8,11 +8,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # 1. 获取源码
-      - name: Checkout
+      - name: 🚀 检出代码
         uses: actions/checkout@v4
-      # 4. 部署到服务器（可选）
-      - name: Deploy to Server
+      - name: ♻️ 同步代码
         uses: easingthemes/ssh-deploy@main
         with:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
@@ -24,12 +22,19 @@ jobs:
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
           TARGET: ${{ secrets.DEPLOY_DIR }}
           SCRIPT_BEFORE: |
-            echo "🚀 开始清理旧的虚拟环境 ..."
+            echo "开始清理旧的虚拟环境 ..."
             cd ${{ secrets.DEPLOY_DIR }} && sudo rm -rf venv
             echo "当前目录：$(pwd)"
             echo "✅ 清理完毕"
-          SCRIPT_AFTER: |
-            echo "🚀 开始部署 ..."
-            echo "当前目录：$(pwd)"
+
+      - name: 🚀 SSH 远程部署
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          username: root
+          host: ${{ secrets.REMOTE_HOST }}
+          port: ${{ secrets.REMOTE_PORT }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            echo "开始部署 ..."
             cd ${{ secrets.DEPLOY_DIR }} && sudo bash scripts/check_and_deploy.sh
             echo "✅ 部署完毕"
