@@ -1,13 +1,14 @@
 import re
 
 from telegram import Update
-from telegram.ext import CommandHandler, MessageHandler, filters, ContextTypes
+from telegram.ext import CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler, \
+    CallbackQueryHandler
 
-from src.astra.constants import KNOWN_COMMANDS
+from src.astra.constants import KNOWN_COMMANDS, WEATHER_INPUT
 from src.astra.handlers.commands import start_command, help_command, news_command, remind_command, tools_command, \
     cancel_command, settings_command, about_command
-from src.astra.handlers.conversations import weather_conv_handler
 from src.astra.handlers.messages import chat_entry, weather_entry, express_entry, news_entry, tools_entry, remind_entry
+from src.astra.modules.weather import weather_button, weather_input, weather_cancel
 
 
 def register_all_handlers(application):
@@ -24,8 +25,18 @@ def register_all_conversations(application):
     注册「对话」处理器
     :param application:
     """
-    application.add_handler(weather_conv_handler)
-    # 继续添加其他对话处理器
+    # 天气查询对话处理器
+    conv_handler = ConversationHandler(
+        entry_points=[MessageHandler(filters.Regex(r"^🌤️\s*天气$"), weather_entry)],
+        states={
+            WEATHER_INPUT: [
+                CallbackQueryHandler(weather_button, pattern=r"^weather_"),
+                MessageHandler(filters.TEXT & ~filters.COMMAND, weather_input)
+            ],
+        },
+        fallbacks=[CommandHandler('cancel', weather_cancel)],
+    )
+    application.add_handler(conv_handler)
 
 
 def register_all_commands(application):
@@ -62,7 +73,7 @@ def register_all_messages(application):
     """
     button_map = [
         ("💬 聊天", chat_entry),
-        ("🌤️ 天气", weather_entry),
+        # ("🌤️ 天气", weather_entry),
         ("📦 快递", express_entry),
         ("📰 新闻", news_entry),
         ("🛠️ 工具", tools_entry),

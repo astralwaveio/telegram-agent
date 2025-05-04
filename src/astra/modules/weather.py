@@ -5,7 +5,6 @@ import httpx
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
-from src.astra.constants import WEATHER_INPUT, MAIN_KEYBOARD
 from src.astra.modules.errors import CityNotFoundError, CityAmbiguousError
 
 WEATHER_CITYS_PATH = os.path.join(os.path.dirname(__file__), "data", "weather_citys.csv")
@@ -95,48 +94,50 @@ class WeatherCityResolver:
             raise CityNotFoundError()
 
 
-# 处理按钮点击
+# 处理按钮选择
 async def weather_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     city = query.data.replace("weather_", "")
-    # 修改原有按钮消息，提示正在查询
-    await query.edit_message_text(f"正在查询 {city} 的天气...")
-
-    # 查询天气
-    weather_info = f"{city} 今天天气晴"  # 示例
-
-    # 直接给用户发一条新消息
-    await context.bot.send_message(
-        chat_id=query.message.chat.id,
-        text=weather_info
-    )
+    weather_info = await weather_query(city)
+    await query.edit_message_text(weather_info)
     return ConversationHandler.END
 
 
 # 处理手动输入
+async def weather_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    city = update.message.text.strip()
+    weather_info = await weather_query(city)
+    await update.message.reply_text(weather_info)
+    return ConversationHandler.END
 
-async def weather_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    city_code = update.message.text.strip()
+
+# 取消
+async def weather_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("已取消天气查询。")
+    return ConversationHandler.END
+
+
+# 天气查询
+async def weather_query(city: str):
+    city_code = city.strip()
     try:
         city_code = WeatherCityResolver().weather_resolve(city_code)
     except (CityNotFoundError, CityAmbiguousError) as e:
-        await update.message.reply_text(f'{e.message}')
-        return WEATHER_INPUT
+        return e.message
     city_code_prefixes = (
         "WX", "WW", "WQ", "WR", "Y8", "YB", "Y9", "WP", "WZ", "YC", "WT", "WS", "WM", "WK", "WE",
         "W7", "W6", "W9", "WD", "WJ", "WH", "W5", "TV", "TU", "TY", "WN", "TZ", "VB", "TX", "TW", "Y0"
     )
     if not city_code.startswith(city_code_prefixes):
-        await update.message.reply_text("暂不支持该城市，请重新输入。")
-        return WEATHER_INPUT
+        return "暂不支持该城市，请重新输入。"
     # 构造请求URL
-    base_url = "https://api.seniverse.com/v3/weather/"
+    base_url = "https://api.seniverse.com/v3/weather"
     async with httpx.AsyncClient() as client:
         private_key = os.getenv("XINZHI_PRI_KEY")
         # 查询实时天气
         now_response = await client.get(
-            f"{base_url}now.json",
+            f"{base_url}/now.json",
             params={
                 "key": private_key,
                 "location": city_code,
@@ -146,7 +147,7 @@ async def weather_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         # 查询未来三天天气
         forecast_response = await client.get(
-            f"{base_url}daily.json",
+            f"{base_url}/daily.json",
             params={
                 "key": private_key,
                 "location": city_code,
@@ -158,13 +159,12 @@ async def weather_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
     # 检查响应状态码
     if now_response.status_code != 200 or forecast_response.status_code != 200:
-        await update.message.reply_text("无法获取天气数据，请稍后再试。")
-        return ConversationHandler.END
+        return "无法获取天气数据，请稍后再试。"
     now_data = now_response.json()["results"][0]["now"]
     forecast_data = forecast_response.json()["results"][0]["daily"]
     # 构建回复内容
     reply_text = (
-        f"🌤️ {update.message.text.strip()} 实时天气：\n"
+        f"🌤️ {city.strip()} 实时天气：\n"
         f"温度：{now_data['temperature']}°C\n"
         f"天气：{now_data['text_day']}\n"
         f"湿度：{now_data['humidity']}%\n"
@@ -177,11 +177,4 @@ async def weather_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"3. {forecast_data[2]['date']}：{forecast_data[2]['text_day']} / {forecast_data[2]['text_night']}，"
         f"{forecast_data[2]['low']}°C ~ {forecast_data[2]['high']}°C\n"
     )
-    await update.message.reply_text(reply_text, reply_markup=MAIN_KEYBOARD)
-    return ConversationHandler.END
-
-
-# 取消命令
-async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("已取消天气查询。")
-    return ConversationHandler.END
+    return reply_text

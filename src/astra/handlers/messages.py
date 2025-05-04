@@ -6,8 +6,7 @@ from telegram.ext import (
     ContextTypes
 )
 
-from src.astra.constants import CHAT_INPUT, EXPRESS_INPUT, NEWS_INPUT, TOOLS_INPUT, REMIND_INPUT
-from src.astra.modules.weather import WEATHER_INPUT
+from src.astra.constants import CHAT_INPUT, EXPRESS_INPUT, NEWS_INPUT, TOOLS_INPUT, REMIND_INPUT, WEATHER_INPUT
 
 
 # =======================
