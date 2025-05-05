@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+export PATH=$HOME/bin:$HOME/.local/bin:/usr/local/bin:$PATH
 
 # 颜色定义
 RED='\033[0;31m'
@@ -62,7 +63,7 @@ if [ -d venv ]; then
     success "Python 虚拟环境已存在，跳过创建"
 else
     info "Python 虚拟环境不存在，正在创建..."
-    python3 -m venv venv
+    /usr/bin/python3 -m venv venv
     if [ ! -d venv ]; then
         error "虚拟环境创建失败，请检查 python3-venv 是否已安装、磁盘空间和权限"
         exit 1
