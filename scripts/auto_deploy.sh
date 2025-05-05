@@ -56,28 +56,30 @@ else
 fi
 
 line
-info "2. 检查 Python 虚拟环境"
-info "当前目录: $(pwd)"
-ls -al
+info "2. 删除并重新创建 Python 虚拟环境"
 if [ -d venv ]; then
-    success "Python 虚拟环境已存在，跳过创建"
-else
-    info "Python 虚拟环境不存在，正在创建..."
-    /usr/bin/python3 -m venv venv
-    if [ ! -d venv ]; then
-        error "虚拟环境创建失败，请检查 python3-venv 是否已安装、磁盘空间和权限"
-        exit 1
-    fi
-    ls -al venv || true
-    ls -al venv/bin || true
-    success "虚拟环境创建完成"
+    warn "发现旧的 venv 目录，正在删除..."
+    rm -rf venv
+    success "旧的 venv 目录已删除"
 fi
+info "正在创建新的虚拟环境..."
+/usr/bin/python3 -m venv venv
+if [ ! -d venv ]; then
+    error "虚拟环境创建失败，请检查 python3-venv 是否已安装、磁盘空间和权限"
+    exit 1
+fi
+ls -al venv || true
+ls -al venv/bin || true
+success "虚拟环境创建完成"
 
 line
 info "3. 激活 Python 虚拟环境"
 echo "当前目录: $(pwd)"
-ls  -al
-
+ls -al
+if [ ! -f venv/bin/activate ]; then
+    error "找不到 venv/bin/activate，虚拟环境未正确创建！"
+    exit 1
+fi
 source venv/bin/activate
 success "虚拟环境已激活"
 
