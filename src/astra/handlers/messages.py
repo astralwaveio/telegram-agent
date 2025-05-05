@@ -2,7 +2,7 @@ import logging
 
 from telegram import (
     Update, InlineKeyboardButton,
-    InlineKeyboardMarkup, ReplyKeyboardRemove
+    InlineKeyboardMarkup
 )
 from telegram.ext import (
     ContextTypes
@@ -58,11 +58,6 @@ async def news_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "📰 <b>新闻资讯</b>\n\n🚧 该功能正在开发中，敬请期待！",
         parse_mode="HTML",
         reply_markup=reply_markup
-    )
-    # 隐藏底部自定义键盘
-    await update.effective_chat.send_message(
-        "",
-        reply_markup=ReplyKeyboardRemove()
     )
     return NEWS_INPUT
 
