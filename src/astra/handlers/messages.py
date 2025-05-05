@@ -23,7 +23,7 @@ def location_handler(update: Update, context: CallbackContext):
 # =======================
 # 按钮 / 消息处理器
 # =======================
-async def chat_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def aichat_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.effective_chat.send_message("🚧 智能对话功能正在开发中，敬请期待！")
     return CHAT_INPUT
 

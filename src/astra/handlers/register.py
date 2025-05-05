@@ -6,9 +6,11 @@ from telegram.ext import CommandHandler, MessageHandler, filters, ContextTypes, 
 from telegram.warnings import PTBUserWarning
 
 from src.astra.constants import KNOWN_COMMANDS, WEATHER_INPUT
-from src.astra.handlers.commands import start_command, help_command, news_command, remind_command, tools_command, \
+from src.astra.handlers.commands import start_command, help_command, tools_command, \
     cancel_command, settings_command, about_command
-from src.astra.handlers.messages import chat_entry, weather_entry, express_entry, news_entry, tools_entry, remind_entry
+from src.astra.handlers.messages import aichat_entry, weather_entry, express_entry, news_entry, tools_entry, \
+    remind_entry
+from src.astra.modules.aichat import aichat_input, aichat_cancel
 from src.astra.modules.weather import weather_input, weather_cancel
 
 filterwarnings(action="ignore", message=r".*CallbackQueryHandler", category=PTBUserWarning)
@@ -29,7 +31,7 @@ def register_all_conversations(application):
     :param application:
     """
     # 天气查询对话处理器
-    conv_handler = ConversationHandler(
+    weather_handler = ConversationHandler(
         entry_points=[MessageHandler(filters.Regex(r"^🌤️\s*天气$"), weather_entry)],
         states={
             WEATHER_INPUT: [
@@ -40,7 +42,20 @@ def register_all_conversations(application):
         fallbacks=[CommandHandler('cancel', weather_cancel)],
         allow_reentry=True
     )
-    application.add_handler(conv_handler)
+    application.add_handler(weather_handler)
+
+    # AI对话处理器
+    aichat_handler = ConversationHandler(
+        entry_points=[MessageHandler(filters.Regex(r"^💬\s*AI对话$"), aichat_entry)],
+        states={
+            WEATHER_INPUT: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, aichat_input)
+            ]
+        },
+        fallbacks=[CommandHandler('cancel', aichat_cancel)],
+        allow_reentry=True
+    )
+    application.add_handler(aichat_handler)
 
 
 def register_all_commands(application):
@@ -52,11 +67,9 @@ def register_all_commands(application):
     # 注册已知命令
     commands = [
         ("start", start_command),
-        ("help", help_command),
-        ("news", news_command),
-        ("remind", remind_command),
-        ("tools", tools_command),
         ("cancel", cancel_command),
+        ("tools", tools_command),
+        ("help", help_command),
         ("settings", settings_command),
         ("about", about_command),
         # 继续添加其他命令
@@ -76,13 +89,10 @@ def register_all_messages(application):
     :param application:
     """
     button_map = [
-        ("💬 聊天", chat_entry),
-        # ("🌤️ 天气", weather_entry),
         ("📦 快递", express_entry),
         ("📰 新闻", news_entry),
         ("🛠️ 工具", tools_entry),
         ("⏰ 提醒", remind_entry),
-        # 继续添加其他按钮
     ]
     for msg, func in button_map:
         pattern = r"^" + re.escape(msg) + r"$"

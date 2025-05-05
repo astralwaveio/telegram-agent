@@ -8,7 +8,7 @@ SUPPORTED_MODELS = ["openai", "claude", "deepseek", "qwen"]
 # 底部按钮配置
 # =======================
 MAIN_KEYBOARD = settings.get("bot.keyboards")
-CHAT_INPUT, WEATHER_INPUT, WEATHER_RESULT, EXPRESS_INPUT, NEWS_INPUT, TOOLS_INPUT, REMIND_INPUT = range(7)
+WEATHER_INPUT, CHAT_INPUT, EXPRESS_INPUT, NEWS_INPUT, TOOLS_INPUT, REMIND_INPUT = range(6)
 
 # 主菜单按钮
 

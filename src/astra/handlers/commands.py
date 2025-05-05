@@ -52,7 +52,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "  /tools   - 开发工具箱\n"
         "  /cancel  - 取消当前操作\n\n"
         "【常用按钮】\n"
-        "  💬 聊天   - 智能对话（即将上线）\n"
+        "  💬 AI对话   - 智能对话\n"
         "  🌤️ 天气   - 查询天气\n"
         "  📦 快递   - 快递查询\n"
         "  📰 新闻   - 新闻资讯\n"
