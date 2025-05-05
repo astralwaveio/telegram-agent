@@ -1,12 +1,7 @@
 import logging
 
-from telegram import (
-    Update, InlineKeyboardButton,
-    InlineKeyboardMarkup
-)
-from telegram.ext import (
-    ContextTypes
-)
+from telegram import (Update, InlineKeyboardButton, InlineKeyboardMarkup)
+from telegram.ext import (ContextTypes)
 
 from src.astra.constants import CHAT_INPUT, EXPRESS_INPUT, NEWS_INPUT, TOOLS_INPUT, REMIND_INPUT, WEATHER_INPUT, \
     WEATHER_DEFAULT_CITIES
