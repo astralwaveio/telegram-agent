@@ -1,5 +1,5 @@
 from telegram import (
-    Update, BotCommand
+    Update, BotCommand, ReplyKeyboardMarkup
 )
 from telegram.ext import (
     ContextTypes, ConversationHandler
@@ -33,7 +33,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print(f"当前用户名：@{bot_info.username} (ID: {bot_info.id})")
     await update.effective_chat.send_message(
         "你好，我是凌云曦(Astra)，你的多AI智能体助理！\n输入 /help 查看功能。",
-        reply_markup=MAIN_KEYBOARD
+        reply_markup=ReplyKeyboardMarkup(MAIN_KEYBOARD, resize_keyboard=True)
     )
 
 
@@ -87,8 +87,8 @@ async def tools_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def cancel_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.effective_chat.send_message(
-        "🏠 取消当前操作，已返回主菜单。",
-        reply_markup=MAIN_KEYBOARD
+        "🏠 已返回主菜单。",
+        reply_markup=ReplyKeyboardMarkup(MAIN_KEYBOARD, resize_keyboard=True)
     )
     return ConversationHandler.END
 

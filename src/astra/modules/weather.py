@@ -1,7 +1,7 @@
 import os
 
 import requests
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
 from telegram.ext import ContextTypes, ConversationHandler
 
 from src.astra.constants import WEATHER_INPUT, WEATHER_RESULT, MAIN_KEYBOARD
@@ -79,7 +79,7 @@ async def weather_exit_callback(update: Update, context: ContextTypes.DEFAULT_TY
 
 async def weather_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.effective_chat.send_message("<b>已取消天气查询</b>\n期待下次为你服务！", parse_mode="HTML",
-                                             reply_markup=MAIN_KEYBOARD)
+                                             reply_markup=ReplyKeyboardMarkup(MAIN_KEYBOARD, resize_keyboard=True))
     return ConversationHandler.END
 
 

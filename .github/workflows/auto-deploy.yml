@@ -15,7 +15,7 @@ jobs:
         with:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           ARGS: '-rltgoDzvO --delete'
-          EXCLUDE: ".git*, .github*, tests, __pycache__, *.pyc, *.pyo, *.log, .DS_Store, node_modules, public, .env, data/, docker-compose.yml"
+          EXCLUDE: ".git*, .github*, tests, __pycache__, *.pyc, *.pyo, *.log, .DS_Store, node_modules, public, .env, data/, docker-compose.yml, src/astra/config/default.toml"
           SOURCE: ./
           REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
           REMOTE_PORT: ${{ secrets.REMOTE_PORT }}
@@ -36,5 +36,5 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             echo "开始部署 ..."
-            cd ${{ secrets.DEPLOY_DIR }} && sudo bash scripts/check_and_deploy.sh
+            cd ${{ secrets.DEPLOY_DIR }} && sudo bash scripts/auto_deploy.sh
             echo "✅ 部署完毕"
