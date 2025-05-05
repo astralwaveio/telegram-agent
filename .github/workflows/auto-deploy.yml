@@ -7,10 +7,12 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: 🚀 检出代码
+      - name: 🛎️ 检出代码
         uses: actions/checkout@v4
-      - name: ♻️ 同步代码
+
+      - name: 📤 同步代码到服务器
         uses: easingthemes/ssh-deploy@main
         with:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
@@ -21,13 +23,8 @@ jobs:
           REMOTE_PORT: ${{ secrets.REMOTE_PORT }}
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
           TARGET: ${{ secrets.DEPLOY_DIR }}
-          SCRIPT_BEFORE: |
-            echo "开始清理旧的虚拟环境 ..."
-            cd ${{ secrets.DEPLOY_DIR }} && sudo rm -rf venv
-            echo "当前目录：$(pwd)"
-            echo "✅ 清理完毕"
 
-      - name: 🚀 SSH 远程部署
+      - name: 🚀 自动部署
         uses: appleboy/ssh-action@v1.2.2
         with:
           username: root
@@ -35,6 +32,23 @@ jobs:
           port: ${{ secrets.REMOTE_PORT }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            echo "🍏 当前目录$(pwd)， 开始部署中 ..."
-            cd ${{ secrets.DEPLOY_DIR }} && sudo bash scripts/auto_deploy.sh
-            echo "✅ 部署完毕"
+            echo "🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸"
+            if [ ! -d "${{ secrets.DEPLOY_DIR }}" ]; then
+              echo "❌ 目标目录不存在：${{ secrets.DEPLOY_DIR }}"
+              exit 1
+            fi
+            echo "📂 当前目录: $(pwd)"
+            echo "📂 切换到部署目录: ${{ secrets.DEPLOY_DIR }}"
+            cd ${{ secrets.DEPLOY_DIR }}
+            # 确保部署脚本有执行权限
+            chmod +x scripts/auto_deploy.sh
+            echo "🚀 开始自动部署 ..."
+            if bash scripts/auto_deploy.sh; then
+              echo "✅ 部署完毕"
+            else
+              echo "❌ 部署失败，请检查日志！"
+              # 如有部署日志，可在此输出 tail
+              # tail -n 50 logs/error.log || true
+              exit 1
+            fi
+            echo "🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸🔸"
