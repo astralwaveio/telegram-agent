@@ -37,9 +37,10 @@ jobs:
               echo "❌ 目标目录不存在：${{ secrets.DEPLOY_DIR }}"
               exit 1
             fi
-            echo "📂 当前目录: $(pwd)"
+            echo "📂 当前目录: `pwd`"
             echo "📂 切换到部署目录: ${{ secrets.DEPLOY_DIR }}"
             cd ${{ secrets.DEPLOY_DIR }}
+            echo "📂 脚本执行目录: `pwd`"
             # 确保部署脚本有执行权限
             chmod +x scripts/auto_deploy.sh
             echo "🚀 开始自动部署 ..."
