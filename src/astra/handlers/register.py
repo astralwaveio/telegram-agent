@@ -41,7 +41,7 @@ def register_all_conversations(application):
                 MessageHandler(filters.TEXT & ~filters.COMMAND, weather_input)
             ]
         },
-        fallbacks=[CommandHandler('cancel', partial(cancel_service, service_name="天气查询"))],
+        fallbacks=[CommandHandler('cancel', partial(cancel_service, service_name="天气查询服务"))],
         allow_reentry=True
     )
     application.add_handler(weather_handler)
@@ -57,7 +57,7 @@ def register_all_conversations(application):
                 MessageHandler(filters.Regex(r"^🤖阿里千问$") & ~filters.COMMAND, aichat_qwen_input),
             ]
         },
-        fallbacks=[CommandHandler('cancel', partial(cancel_service, service_name="天气查询"))],
+        fallbacks=[CommandHandler('cancel', partial(cancel_service, service_name="AI对话服务"))],
         allow_reentry=True
     )
     application.add_handler(aichat_handler)
