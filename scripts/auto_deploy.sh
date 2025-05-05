@@ -15,7 +15,16 @@ error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 line() { echo -e "${YELLOW}----------------------------------------${NC}"; }
 
-cd /opt/telegram-agent
+# 切换到项目目录
+DEPLOY_DIR="/opt/telegram-agent"
+cd "$DEPLOY_DIR"
+
+line
+info "0. 环境与目录检查"
+info "当前目录: $(pwd)"
+ls -al
+df -h
+whoami
 
 line
 info "1. 检查 Python3 环境"
@@ -25,10 +34,17 @@ if ! command -v python3 &>/dev/null; then
 else
     success "Python3 已安装"
 fi
-info "检查 python3-venv 依赖"
+info "Python3 版本: $(python3 --version)"
+
+line
+info "1.1 检查 python3-venv 依赖"
 if ! python3 -m venv --help &>/dev/null; then
     warn "python3-venv 未安装，正在尝试安装..."
-    sudo apt-get update && sudo apt-get install -y python3-venv
+    if [ "$(id -u)" -eq 0 ]; then
+        apt-get update && apt-get install -y python3-venv
+    else
+        sudo apt-get update && sudo apt-get install -y python3-venv
+    fi
     if ! python3 -m venv --help &>/dev/null; then
         error "python3-venv 安装失败，请手动检查！"
         exit 1
@@ -40,15 +56,19 @@ fi
 
 line
 info "2. 检查 Python 虚拟环境"
+info "当前目录: $(pwd)"
+ls -al
 if [ -d venv ]; then
     success "Python 虚拟环境已存在，跳过创建"
 else
     info "Python 虚拟环境不存在，正在创建..."
     python3 -m venv venv
     if [ ! -d venv ]; then
-        error "虚拟环境创建失败，请检查 python3-venv 是否已安装"
+        error "虚拟环境创建失败，请检查 python3-venv 是否已安装、磁盘空间和权限"
         exit 1
     fi
+    ls -al venv || true
+    ls -al venv/bin || true
     success "虚拟环境创建完成"
 fi
 
@@ -56,6 +76,8 @@ line
 info "3. 激活 Python 虚拟环境"
 if [ ! -f venv/bin/activate ]; then
     error "找不到 venv/bin/activate，虚拟环境未正确创建！"
+    ls -al venv
+    ls -al venv/bin || true
     exit 1
 fi
 source venv/bin/activate
@@ -63,7 +85,6 @@ success "虚拟环境已激活"
 
 line
 info "4. 安装依赖"
-# pip install --upgrade pip 静默
 python -m pip install --upgrade pip --quiet || { error "pip 升级失败"; exit 2; }
 
 # 卸载所有依赖（静默，防止交互）
@@ -116,7 +137,14 @@ SERVICE_FILE="/etc/systemd/system/astra.service"
 if [ ! -f "$SERVICE_FILE" ]; then
     warn "systemd 服务 astra.service 不存在，当前目录：$(pwd) ；正在自动创建..."
     # 使用 sudo 时假设脚本运行用户有免密 sudo 权限，否则会阻塞
-    sudo tee "$SERVICE_FILE" > /dev/null <<EOF
+    if [ "$(id -u)" -eq 0 ]; then
+        TEE_CMD="tee"
+        SYSTEMCTL_CMD="systemctl"
+    else
+        TEE_CMD="sudo tee"
+        SYSTEMCTL_CMD="sudo systemctl"
+    fi
+    $TEE_CMD "$SERVICE_FILE" > /dev/null <<EOF
 [Unit]
 Description=Telegram Astra Bot Service
 After=network.target
@@ -132,8 +160,8 @@ EnvironmentFile=$(pwd)/.env
 [Install]
 WantedBy=multi-user.target
 EOF
-    sudo systemctl daemon-reload
-    sudo systemctl enable astra.service
+    $SYSTEMCTL_CMD daemon-reload
+    $SYSTEMCTL_CMD enable astra.service
     success "systemd 服务已创建并启用"
 else
     success "systemd 服务 astra.service 已存在"
@@ -141,15 +169,25 @@ fi
 
 line
 info "9. 重启 astra 服务"
-sudo systemctl stop astra.service || true
-sleep 0.5
-sudo systemctl start astra.service
+if [ "$(id -u)" -eq 0 ]; then
+    systemctl stop astra.service || true
+    sleep 0.5
+    systemctl start astra.service
+else
+    sudo systemctl stop astra.service || true
+    sleep 0.5
+    sudo systemctl start astra.service
+fi
 success "astra 服务已重启"
 
 line
 info "10. 检查服务状态"
 sleep 1
-sudo systemctl status astra.service --no-pager
+if [ "$(id -u)" -eq 0 ]; then
+    systemctl status astra.service --no-pager
+else
+    sudo systemctl status astra.service --no-pager
+fi
 success "服务状态检查完成"
 
 line
