@@ -22,6 +22,7 @@ async def chat_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return CHAT_INPUT
 
 
+# 天气入口
 async def weather_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """对话入口，提示用户输入城市或选择常用城市"""
     city_buttons = [InlineKeyboardButton(name, callback_data=cb) for name, cb in WEATHER_DEFAULT_CITIES]
@@ -38,10 +39,6 @@ async def weather_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
         msg,
         reply_markup=reply_markup,
         parse_mode="HTML"
-    )
-    await update.effective_chat.send_message(
-        "",
-        reply_markup=ReplyKeyboardRemove()
     )
     return WEATHER_INPUT
 
