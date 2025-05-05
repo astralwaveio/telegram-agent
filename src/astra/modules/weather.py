@@ -90,7 +90,7 @@ def get_weekday(date_str):
         dt = datetime.datetime.strptime(date_str, "%Y-%m-%d")
         week_map = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
         return week_map[dt.weekday()]
-    except ValueError:
+    except Exception:
         return ""
 
 
@@ -129,17 +129,45 @@ def get_weather_detail(lon, lat):
         daily_data = daily.get("result", {}).get("daily", {})
         skycons = daily_data.get("skycon", [])
         temperatures = daily_data.get("temperature", [])
+        wind_list = daily_data.get("wind", [])
+        humidity_list = daily_data.get("humidity", [])
+        aqi_list = daily_data.get("air_quality", {}).get("aqi", [])
+        precipitation_list = daily_data.get("precipitation", [])
+        uv_list = daily_data.get("life_index", {}).get("ultraviolet", [])
         days = min(3, len(skycons), len(temperatures))
-        # 优化样式：表格+emoji+周几
-        msg_3d = "<b>日期   天气   温度</b>\n"
+        msg_3d = ""
         for i in range(days):
+            # 日期与星期
             date_str = skycons[i].get('date', '')[:10] if 'date' in skycons[i] else "未知日期"
             week = get_weekday(date_str)
             date_fmt = date_str[5:] if len(date_str) == 10 else date_str
+            # 天气
             sky, sky_emoji = skycon_desc(skycons[i].get('value', ''))
+            # 温度
             tmax = temperatures[i].get('max', '?')
             tmin = temperatures[i].get('min', '?')
-            msg_3d += f"{date_fmt} {week} {sky_emoji}{sky:<4} {tmin}~{tmax}℃\n"
+            # 风力
+            wind_speed = wind_list[i].get('max', {}).get('speed', '?') if i < len(wind_list) else "?"
+            # 湿度
+            humidity = humidity_list[i].get('avg', None) if i < len(humidity_list) else None
+            humidity_str = f"{int(humidity * 100)}%" if humidity is not None else "?"
+            # 空气质量
+            aqi_val = aqi_list[i].get('avg', {}).get('chn', '?') if i < len(aqi_list) else "?"
+            # 降水概率
+            precip = precipitation_list[i].get('probability', '?') if i < len(precipitation_list) else "?"
+            # 紫外线
+            uv_desc_day = uv_list[i].get('desc', '') if i < len(uv_list) else ""
+            msg_3d += (
+                f"📅 <b>{date_fmt} {week}</b>\n"
+                f"{sky_emoji} 天气：<b>{sky}</b>\n"
+                f"🌡️ 温度：<b>{tmin}~{tmax}℃</b>\n"
+                f"💨 最大风速：<b>{wind_speed} m/s</b>\n"
+                f"💧 平均湿度：<b>{humidity_str}</b>\n"
+                f"🌫️ 空气质量：<b>{aqi_val}</b>\n"
+                f"🌧️ 降水概率：<b>{precip}%</b>\n"
+                f"🌞 紫外线：<b>{uv_desc_day}</b>\n"
+                "----------------------\n"
+            )
         # 组装消息
         msg = (
             f"{emoji} <b>当前天气</b>\n"
@@ -152,8 +180,8 @@ def get_weather_detail(lon, lat):
             f"🌞 <b>紫外线</b>：{uv_desc}\n"
             f"🤧 <b>感冒风险</b>：{cold_desc}\n"
             f"🚗 <b>洗车指数</b>：{car_washing_desc}\n"
-            f"\n📅 <b>未来3天天气</b>：\n"
-            f"<pre>{msg_3d}</pre>"
+            f"\n<b>未来3天天气：</b>\n"
+            f"{msg_3d}"
         )
         return msg
     except Exception as e:
