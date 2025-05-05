@@ -1,17 +1,19 @@
 import re
+from functools import partial
 from warnings import filterwarnings
 
 from telegram import Update
 from telegram.ext import CommandHandler, MessageHandler, filters, ContextTypes, ConversationHandler
 from telegram.warnings import PTBUserWarning
 
-from src.astra.constants import KNOWN_COMMANDS, WEATHER_INPUT
+from src.astra.constants import KNOWN_COMMANDS, WEATHER_INPUT, AICHAT_INPUT
 from src.astra.handlers.commands import start_command, help_command, tools_command, \
-    cancel_command, settings_command, about_command
+    settings_command, about_command, cancel_service
 from src.astra.handlers.messages import aichat_entry, weather_entry, express_entry, news_entry, tools_entry, \
     remind_entry
-from src.astra.modules.aichat import aichat_input, aichat_cancel
-from src.astra.modules.weather import weather_input, weather_cancel
+from src.astra.modules.aichat import aichat_chatgpt_input, aichat_deepseek_input, \
+    aichat_claude_input, aichat_qwen_input
+from src.astra.modules.weather import weather_input
 
 filterwarnings(action="ignore", message=r".*CallbackQueryHandler", category=PTBUserWarning)
 
@@ -39,7 +41,7 @@ def register_all_conversations(application):
                 MessageHandler(filters.TEXT & ~filters.COMMAND, weather_input)
             ]
         },
-        fallbacks=[CommandHandler('cancel', weather_cancel)],
+        fallbacks=[CommandHandler('cancel', partial(cancel_service, service_name="天气查询"))],
         allow_reentry=True
     )
     application.add_handler(weather_handler)
@@ -48,11 +50,14 @@ def register_all_conversations(application):
     aichat_handler = ConversationHandler(
         entry_points=[MessageHandler(filters.Regex(r"^💬\s*AI对话$"), aichat_entry)],
         states={
-            WEATHER_INPUT: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, aichat_input)
+            AICHAT_INPUT: [
+                MessageHandler(filters.Regex(r"^🤖ChatGPT$") & ~filters.COMMAND, aichat_chatgpt_input),
+                MessageHandler(filters.Regex(r"^🤖Claude$") & ~filters.COMMAND, aichat_claude_input),
+                MessageHandler(filters.Regex(r"^🤖DeepSeek$") & ~filters.COMMAND, aichat_deepseek_input),
+                MessageHandler(filters.Regex(r"^🤖阿里千问$") & ~filters.COMMAND, aichat_qwen_input),
             ]
         },
-        fallbacks=[CommandHandler('cancel', aichat_cancel)],
+        fallbacks=[CommandHandler('cancel', partial(cancel_service, service_name="天气查询"))],
         allow_reentry=True
     )
     application.add_handler(aichat_handler)
@@ -67,7 +72,7 @@ def register_all_commands(application):
     # 注册已知命令
     commands = [
         ("start", start_command),
-        ("cancel", cancel_command),
+        ("cancel", cancel_service),
         ("tools", tools_command),
         ("help", help_command),
         ("settings", settings_command),

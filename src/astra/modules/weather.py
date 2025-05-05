@@ -1,9 +1,10 @@
 import os
 
-from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
-from telegram.ext import ContextTypes, ConversationHandler
+from telegram import ReplyKeyboardMarkup, KeyboardButton
+from telegram.ext import ConversationHandler
 
 from src.astra.constants import MAIN_KEYBOARD, WEATHER_INPUT
+from src.astra.handlers.commands import cancel_service
 from src.astra.services.caiyun_service import CaiyunWeatherClient, LocationService
 
 WEATHER_CITYS_PATH = os.path.join(os.path.dirname(__file__), "data", "weather_citys.csv")
@@ -15,7 +16,7 @@ location_service = LocationService()
 
 async def weather_input(update, context):
     if update.message.text == "取消查询":
-        await weather_cancel(update, context)
+        await cancel_service(update, context, "天气查询服务")
         return ConversationHandler.END
 
     if update.message.location:
@@ -56,12 +57,6 @@ async def weather_input(update, context):
     else:
         await update.effective_chat.send_message("⚠️ 未找到该地名，请重新输入！")
         return WEATHER_INPUT
-
-
-async def weather_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.effective_chat.send_message("<b>已取消天气查询</b>\n期待下次为你服务！", parse_mode="HTML",
-                                             reply_markup=ReplyKeyboardMarkup(MAIN_KEYBOARD, resize_keyboard=True))
-    return ConversationHandler.END
 
 
 def skycon_desc(skycon):

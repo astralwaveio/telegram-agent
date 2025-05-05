@@ -2,7 +2,7 @@ from telegram import (
     Update, BotCommand, ReplyKeyboardMarkup
 )
 from telegram.ext import (
-    ContextTypes, ConversationHandler
+    ConversationHandler
 )
 
 from src.astra.constants import MAIN_KEYBOARD
@@ -28,7 +28,7 @@ async def set_commands(application):
 # =======================
 # 命令 Handler
 # =======================
-async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def start_command(update: Update, context):
     bot_info = await context.bot.get_me()
     print(f"当前用户名：@{bot_info.username} (ID: {bot_info.id})")
     await update.effective_chat.send_message(
@@ -37,7 +37,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def help_command(update: Update, context):
     await update.effective_chat.send_message(
         "🌟 欢迎使用凌云曦（Astra）多AI智能体助手！\n\n"
         "🔹 你可以通过底部按钮或命令快速访问各项服务：\n"
@@ -73,31 +73,44 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-async def news_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def news_command(update: Update, context):
     await update.effective_chat.send_message("🚧 该功能正在开发中，敬请期待！")
 
 
-async def remind_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def remind_command(update: Update, context):
     await update.effective_chat.send_message("🚧 该功能正在开发中，敬请期待！")
 
 
-async def tools_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def tools_command(update: Update, context):
     await update.effective_chat.send_message("🚧 该功能正在开发中，敬请期待！")
 
 
-async def cancel_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# 通用取消方法
+async def cancel_service(update, context, service_name="默认服务"):
+    """
+    通用取消方法
+    :param update: Telegram Update 对象
+    :param context: Telegram Context 对象
+    :param service_name: 取消的服务名称（如“天气查询”、“AI对话”等）
+    """
+    if service_name == "默认服务":
+        msg = "<b>🏠返回主菜单</b>"
+    else:
+        msg = f"<b>已取消{service_name}</b>，期待下次为你服务！"
+
     await update.effective_chat.send_message(
-        "🏠 已返回主菜单。",
+        msg,
+        parse_mode="HTML",
         reply_markup=ReplyKeyboardMarkup(MAIN_KEYBOARD, resize_keyboard=True)
     )
     return ConversationHandler.END
 
 
-async def settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def settings_command(update: Update, context):
     await update.effective_chat.send_message("🚧 该功能正在开发中，敬请期待！")
 
 
-async def about_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def about_command(update: Update, context):
     await update.effective_chat.send_message(
         "我是 👸凌云曦（Astra），你的AI智能助理。😄\n"
         "支持智能对话、新闻资讯、开发工具、生活服务等多种功能。\n"
