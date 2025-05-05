@@ -75,12 +75,9 @@ fi
 
 line
 info "3. 激活 Python 虚拟环境"
-if [ ! -f venv/bin/activate ]; then
-    error "找不到 venv/bin/activate，虚拟环境未正确创建！"
-    ls -al venv
-    ls -al venv/bin || true
-    exit 1
-fi
+echo "当前目录: $(pwd)"
+ls  -al
+
 source venv/bin/activate
 success "虚拟环境已激活"
 
