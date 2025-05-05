@@ -35,6 +35,6 @@ jobs:
           port: ${{ secrets.REMOTE_PORT }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            echo "开始部署 ..."
+            echo "🍏 当前目录$(pwd)， 开始部署中 ..."
             cd ${{ secrets.DEPLOY_DIR }} && sudo bash scripts/auto_deploy.sh
             echo "✅ 部署完毕"
