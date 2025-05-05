@@ -41,3 +41,4 @@ wheel==0.45.1
 tornado==6.4.2
 idna==3.10
 asyncio==3.4.3
+rapidfuzz==3.13.0

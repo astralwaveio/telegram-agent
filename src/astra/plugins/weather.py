@@ -1,6 +1,7 @@
-import os
 import asyncio
-import aiohttp
+import os
+
+from src.astra.modules.weather import caiyun_client
 
 # 预警类型编码映射
 ALERT_TYPE_MAP = {
@@ -33,6 +34,12 @@ ALERT_LEVEL_MAP = {
     "04": "红色",
 }
 
+CAIYUN_TOKEN = os.environ.get("CAIYUN_TOKEN")
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
+
+# 杭州市经纬度
+ALERT_LON, ALERT_LAT = 119.929075, 30.092843
+
 
 def format_alert(alert):
     """格式化预警内容为中文消息"""
@@ -57,34 +64,16 @@ def format_alert(alert):
     return msg
 
 
-CAIYUN_TOKEN = os.environ.get("CAIYUN_TOKEN")
-TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
-
-# 杭州市经纬度
-HZ_LON, HZ_LAT = 120.1551, 30.2741
-
 # 已推送过的预警ID集合，防止重复推送
 pushed_alert_ids = set()
-
-
-async def fetch_alert():
-    """请求彩云天气API获取杭州市预警信息"""
-    url = (
-        f"https://api.caiyunapp.com/v2.6/{CAIYUN_TOKEN}/"
-        f"{HZ_LON},{HZ_LAT}/realtime?alert=true"
-    )
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as resp:
-            data = await resp.json()
-            return data
 
 
 async def listen_weather(application):
     """每半小时检查一次预警并推送新预警"""
     while True:
         try:
-            data = await fetch_alert()
-            alert_info = data.get("result", {}).get("alert", {})
+            alert_data = caiyun_client.query("realtime", (ALERT_LON, ALERT_LAT))
+            alert_info = alert_data.get("result", {}).get("alert", {})
             if alert_info.get("status") == "ok":
                 for alert in alert_info.get("content", []):
                     # 只推送杭州市相关预警

@@ -1,5 +1,4 @@
 # 常量定义
-from telegram import ReplyKeyboardMarkup, KeyboardButton
 
 from src.astra.config import settings
 

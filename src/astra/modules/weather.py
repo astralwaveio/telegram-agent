@@ -1,191 +1,67 @@
-import datetime
 import os
 
-import requests
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
+from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import ContextTypes, ConversationHandler
 
-from src.astra.constants import WEATHER_INPUT, WEATHER_RESULT, MAIN_KEYBOARD
+from src.astra.constants import MAIN_KEYBOARD, WEATHER_INPUT
+from src.astra.services.caiyun_service import CaiyunWeatherClient, LocationService
 
 WEATHER_CITYS_PATH = os.path.join(os.path.dirname(__file__), "data", "weather_citys.csv")
 
+# 读取CSV，构建地名到经纬度的映射
+caiyun_client = CaiyunWeatherClient()
+location_service = LocationService()
 
-async def weather_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    if query.data == "weather_cancel":
-        await query.edit_message_text("期待下次为你服务！😊", parse_mode="HTML")
+
+async def weather_input(update, context):
+    if update.message.text == "取消查询":
+        await weather_cancel(update, context)
         return ConversationHandler.END
 
-    city_map = {
-        "weather_hangzhou": ("杭州", 120.1551, 30.2741),
-        "weather_shanghai": ("上海", 121.4737, 31.2304),
-        "weather_beijing": ("北京", 116.4074, 39.9042),
-        "weather_luohe": ("漯河", 114.0168, 33.5815),
-    }
-    key = query.data
-    if key in city_map:
-        city, lon, lat = city_map[key]
-        weather_info = get_weather_detail(lon, lat)
-        await send_weather_result(update, context, city, weather_info)
-        return WEATHER_RESULT
-    else:
-        await query.edit_message_text("⚠️ 未识别的城市按钮。", parse_mode="HTML")
-    return ConversationHandler.END
-
-
-async def weather_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    city = update.message.text.strip()
-    city_map = {
-        "杭州": (120.1551, 30.2741),
-        "上海": (121.4737, 31.2304),
-        "北京": (116.4074, 39.9042),
-        "漯河": (114.0168, 33.5815),
-    }
-    if city in city_map:
-        lon, lat = city_map[city]
-        weather_info = get_weather_detail(lon, lat)
-        await send_weather_result(update, context, city, weather_info)
-        return WEATHER_RESULT
-    else:
+    if update.message.location:
+        lat = update.message.location.latitude
+        lng = update.message.location.longitude
+        weather_data = caiyun_client.query("weather", (lng, lat))
+        weather_info = assemble_weather_info(weather_data, "当前位置")
         await update.effective_chat.send_message(
-            "⚠️ <b>暂不支持该城市</b>\n\n"
-            "目前仅支持：<b>杭州</b>、<b>上海</b>、<b>北京</b>、<b>漯河</b>\n"
-            "请重新输入城市名，或点击下方按钮。",
+            weather_info,
+            reply_markup=ReplyKeyboardMarkup(MAIN_KEYBOARD, resize_keyboard=True),
             parse_mode="HTML"
         )
+        return ConversationHandler.END
+
+    city_name = update.message.text.strip()
+    result, ambiguous = location_service.search_location(city_name)
+    if ambiguous is not None:
+        ambiguous = list(set(ambiguous))
+    if result:
+        lng, lat = result['lng'], result['lat']
+        weather_data = caiyun_client.query("weather", (lng, lat))
+        weather_info = assemble_weather_info(weather_data, city_name)
+        await update.effective_chat.send_message(
+            weather_info,
+            reply_markup=ReplyKeyboardMarkup(MAIN_KEYBOARD, resize_keyboard=True),
+            parse_mode="HTML"
+        )
+        return ConversationHandler.END
+    elif ambiguous:
+        # 假设 ambiguous 是你的候选地名列表
+        keyboard = [[KeyboardButton(name)] for name in ambiguous]
+        reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=True)
+        await update.effective_chat.send_message(
+            "地名不唯一，请补充上级地区。可能的选项有：",
+            reply_markup=reply_markup
+        )
         return WEATHER_INPUT
-
-
-async def send_weather_result(update, context, city, weather_info):
-    """发送天气结果并附带退出按钮"""
-    keyboard = [
-        [InlineKeyboardButton("🔚 退出", callback_data="weather_exit")]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.effective_chat.send_message(
-        f"📍 <b>{city}</b>天气：\n\n{weather_info}",
-        reply_markup=reply_markup,
-        parse_mode="HTML"
-    )
-
-
-async def weather_exit_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """处理退出按钮，发送退出提示，不删除原消息"""
-    query = update.callback_query
-    await query.answer()
-    await update.effective_chat.send_message("🔚 已退出当前操作。", parse_mode="HTML")
-    return ConversationHandler.END
+    else:
+        await update.effective_chat.send_message("⚠️ 未找到该地名，请重新输入！")
+        return WEATHER_INPUT
 
 
 async def weather_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.effective_chat.send_message("<b>已取消天气查询</b>\n期待下次为你服务！", parse_mode="HTML",
                                              reply_markup=ReplyKeyboardMarkup(MAIN_KEYBOARD, resize_keyboard=True))
     return ConversationHandler.END
-
-
-def get_weekday(date_str):
-    """将日期字符串转为周几"""
-    try:
-        dt = datetime.datetime.strptime(date_str, "%Y-%m-%d")
-        week_map = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
-        return week_map[dt.weekday()]
-    except Exception:
-        return ""
-
-
-def get_weather_detail(lon, lat):
-    """获取详细天气信息（3天预报+生活指数+实时）"""
-    caiyun_token = os.environ.get("CAIYUN_TOKEN")
-    # 实时天气
-    realtime_url = f"https://api.caiyunapp.com/v2.6/{caiyun_token}/{lon},{lat}/realtime"
-    # 3天预报+生活指数
-    daily_url = f"https://api.caiyunapp.com/v2.6/{caiyun_token}/{lon},{lat}/daily?dailysteps=3"
-    try:
-        realtime = requests.get(realtime_url, timeout=5).json()
-        daily = requests.get(daily_url, timeout=5).json()
-        # 解析实时天气
-        rt = realtime.get("result", {}).get("realtime", {})
-        temp = rt.get("temperature")
-        skycon = rt.get("skycon")
-        desc, emoji = skycon_desc(skycon)
-        humidity = rt.get("humidity", None)
-        humidity_str = f"{int(humidity * 100)}%" if humidity is not None else "未知"
-        wind_speed = rt.get("wind", {}).get("speed", None)
-        wind_str = f"{wind_speed} m/s" if wind_speed is not None else "未知"
-        aqi = rt.get("air_quality", {}).get("aqi", {}).get("chn", None)
-        aqi_str = f"{aqi}" if aqi is not None else "未知"
-        # 解析生活指数（当天）
-        life_index = daily.get("result", {}).get("daily", {}).get("life_index", {})
-        dressing = life_index.get("dressing", [{}])[0]
-        dressing_desc = dressing.get("desc", "暂无建议")
-        uv = life_index.get("ultraviolet", [{}])[0]
-        uv_desc = uv.get("desc", "暂无建议")
-        cold = life_index.get("coldRisk", [{}])[0]
-        cold_desc = cold.get("desc", "暂无建议")
-        car_washing = life_index.get("carWashing", [{}])[0]
-        car_washing_desc = car_washing.get("desc", "暂无建议")
-        # 解析3天预报
-        daily_data = daily.get("result", {}).get("daily", {})
-        skycons = daily_data.get("skycon", [])
-        temperatures = daily_data.get("temperature", [])
-        wind_list = daily_data.get("wind", [])
-        humidity_list = daily_data.get("humidity", [])
-        aqi_list = daily_data.get("air_quality", {}).get("aqi", [])
-        precipitation_list = daily_data.get("precipitation", [])
-        uv_list = daily_data.get("life_index", {}).get("ultraviolet", [])
-        days = min(3, len(skycons), len(temperatures))
-        msg_3d = ""
-        for i in range(days):
-            # 日期与星期
-            date_str = skycons[i].get('date', '')[:10] if 'date' in skycons[i] else "未知日期"
-            week = get_weekday(date_str)
-            date_fmt = date_str[5:] if len(date_str) == 10 else date_str
-            # 天气
-            sky, sky_emoji = skycon_desc(skycons[i].get('value', ''))
-            # 温度
-            tmax = temperatures[i].get('max', '?')
-            tmin = temperatures[i].get('min', '?')
-            # 风力
-            wind_speed = wind_list[i].get('max', {}).get('speed', '?') if i < len(wind_list) else "?"
-            # 湿度
-            humidity = humidity_list[i].get('avg', None) if i < len(humidity_list) else None
-            humidity_str = f"{int(humidity * 100)}%" if humidity is not None else "?"
-            # 空气质量
-            aqi_val = aqi_list[i].get('avg', {}).get('chn', '?') if i < len(aqi_list) else "?"
-            # 降水概率
-            precip = precipitation_list[i].get('probability', '?') if i < len(precipitation_list) else "?"
-            # 紫外线
-            uv_desc_day = uv_list[i].get('desc', '') if i < len(uv_list) else ""
-            msg_3d += (
-                f"📅 <b>{date_fmt} {week}</b>\n"
-                f"{sky_emoji} 天气：<b>{sky}</b>\n"
-                f"🌡️ 温度：<b>{tmin}~{tmax}℃</b>\n"
-                f"💨 最大风速：<b>{wind_speed} m/s</b>\n"
-                f"💧 平均湿度：<b>{humidity_str}</b>\n"
-                f"🌫️ 空气质量：<b>{aqi_val}</b>\n"
-                f"🌧️ 降水概率：<b>{precip}%</b>\n"
-                f"🌞 紫外线：<b>{uv_desc_day}</b>\n"
-                "----------------------\n"
-            )
-        # 组装消息
-        msg = (
-            f"{emoji} <b>当前天气</b>\n"
-            f"🌡️ 温度：<b>{temp}℃</b>\n"
-            f"🌥️ 天气：<b>{desc}</b>\n"
-            f"💧 湿度：<b>{humidity_str}</b>\n"
-            f"💨 风速：<b>{wind_str}</b>\n"
-            f"🌫️ 空气质量指数：<b>{aqi_str}</b>\n"
-            f"\n👕 <b>穿衣指数</b>：{dressing_desc}\n"
-            f"🌞 <b>紫外线</b>：{uv_desc}\n"
-            f"🤧 <b>感冒风险</b>：{cold_desc}\n"
-            f"🚗 <b>洗车指数</b>：{car_washing_desc}\n"
-            f"\n<b>未来3天天气：</b>\n"
-            f"{msg_3d}"
-        )
-        return msg
-    except Exception as e:
-        return f"⚠️ <b>获取天气失败</b>\n请稍后再试。\n\n<code>{e}</code>"
 
 
 def skycon_desc(skycon):
@@ -214,3 +90,91 @@ def skycon_desc(skycon):
     }
     # 如果找不到，返回原始代码和问号
     return mapping.get(skycon, (skycon, "❓"))
+
+
+def get_air_quality_emoji(aqi):
+    """AQI数值转emoji+中文等级"""
+    if aqi <= 50:
+        return "🟢 优"
+    elif aqi <= 100:
+        return "🟡 良"
+    elif aqi <= 150:
+        return "🟠 轻度"
+    elif aqi <= 200:
+        return "🔴 中度"
+    else:
+        return "🟣 重度"
+
+
+def format_date(date_str):
+    """日期字符串转YYYY-MM-DD"""
+    return date_str.split('T')[0]
+
+
+def assemble_weather_info(weather_data, city_name=""):
+    """组装天气信息字符串"""
+    result = weather_data['result']
+    realtime = result['realtime']
+    daily = result['daily']
+    life_index = daily['life_index']
+
+    # 实时天气
+    skycon_name, skycon_emoji = skycon_desc(realtime['skycon'])
+    realtime_temp = realtime['temperature']
+    realtime_feel = realtime['apparent_temperature']
+    realtime_hum = int(realtime['humidity'] * 100)
+    realtime_wind = realtime['wind']['speed']
+    realtime_aqi = realtime['air_quality']['aqi']['chn']
+    realtime_pm25 = realtime['air_quality']['pm25']
+    realtime_aqi_desc = get_air_quality_emoji(realtime_aqi)
+
+    weather_info = (
+        f"📍 <b>{city_name}</b>  实时天气：\n"
+        f"{skycon_emoji} {skycon_name}  {realtime_temp}°C（体感{realtime_feel}°C）\n"
+        f"💧 湿度：{realtime_hum}%  💨 风速：{realtime_wind} km/h\n"
+        f"🌫️ 空气质量：{realtime_aqi_desc}（PM2.5: {realtime_pm25}）\n\n"
+    )
+
+    # 未来三天
+    weather_info += f"📍 <b>{city_name}</b>  近 3 日天气：\n"
+    for i in range(3):
+        date = format_date(daily['temperature'][i]['date'])
+        skycon_code = daily['skycon'][i]['value']
+        skycon_name, skycon_emoji = skycon_desc(skycon_code)
+        temp_max = daily['temperature'][i]['max']
+        temp_min = daily['temperature'][i]['min']
+        temp_avg = daily['temperature'][i]['avg']
+        hum_avg = int(daily['humidity'][i]['avg'] * 100)
+        hum_max = int(daily['humidity'][i]['max'] * 100)
+        hum_min = int(daily['humidity'][i]['min'] * 100)
+        pm25_avg = daily['air_quality']['pm25'][i]['avg']
+        pm25_max = daily['air_quality']['pm25'][i]['max']
+        pm25_min = daily['air_quality']['pm25'][i]['min']
+        rain_prob = daily['precipitation'][i]['probability']
+        wind_avg = daily['wind'][i]['avg']['speed']
+        wind_max = daily['wind'][i]['max']['speed']
+        wind_min = daily['wind'][i]['min']['speed']
+        sunrise = daily['astro'][i]['sunrise']['time']
+        sunset = daily['astro'][i]['sunset']['time']
+        comfort = life_index['comfort'][i]['desc']
+        uv = life_index['ultraviolet'][i]['desc']
+        carwash = life_index['carWashing'][i]['desc']
+        cold = life_index['coldRisk'][i]['desc']
+
+        weather_info += (
+            f"📅 <b>{date}</b>\n"
+            f"{skycon_emoji} {skycon_name}\n"
+            f"🌧️ 降水概率：{rain_prob}%\n"
+            f"🌡️ 最高{temp_max}°C / 最低{temp_min}°C / 平均{temp_avg}°C\n"
+            f"💧 湿度：{hum_avg}%（最高{hum_max}% 最低{hum_min}%）\n"
+            f"🌫️ PM2.5：{pm25_avg}（最高{pm25_max} 最低{pm25_min}）\n"
+            f"💨 风速：{wind_avg} km/h（最大{wind_max} 最小{wind_min}）\n"
+            f"🌅 日出：{sunrise}  🌇 日落：{sunset}\n"
+            f"😊 舒适度：{comfort}   🧴 紫外线：{uv}\n"
+            f"🚗 洗车：{carwash}   🤧 感冒：{cold}\n"
+            f"------------------------------\n\n"
+        )
+    weather_info += (
+        f" Copyright © 2025, <b>@Astral Wave</b>.\n"
+    )
+    return weather_info

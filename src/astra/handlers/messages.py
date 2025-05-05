@@ -1,12 +1,23 @@
 import logging
 
-from telegram import (Update, InlineKeyboardButton, InlineKeyboardMarkup)
-from telegram.ext import (ContextTypes)
+from telegram import (Update, InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup)
+from telegram.ext import (ContextTypes, CallbackContext)
 
-from src.astra.constants import CHAT_INPUT, EXPRESS_INPUT, NEWS_INPUT, TOOLS_INPUT, REMIND_INPUT, WEATHER_INPUT, \
-    WEATHER_DEFAULT_CITIES
+from src.astra.constants import CHAT_INPUT, EXPRESS_INPUT, NEWS_INPUT, TOOLS_INPUT, REMIND_INPUT, WEATHER_INPUT
+from src.astra.modules.weather import caiyun_client
 
 logger = logging.getLogger("message")
+
+
+def location_handler(update: Update, context: CallbackContext):
+    if update.message.location:
+        lat = update.message.location.latitude
+        lng = update.message.location.longitude
+        # 这里调用你的天气查询服务
+        weather = caiyun_client.query("weather", (lng, lat))
+        update.message.reply_text(f"你当前位置的天气：{weather}")
+    else:
+        update.message.reply_text("请发送你的位置。")
 
 
 # =======================
@@ -18,22 +29,24 @@ async def chat_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 # 天气入口
-async def weather_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """对话入口，提示用户输入城市或选择常用城市"""
-    city_buttons = [InlineKeyboardButton(name, callback_data=cb) for name, cb in WEATHER_DEFAULT_CITIES]
-    keyboard = [city_buttons[i:i + 3] for i in range(0, len(city_buttons), 3)]
-    keyboard.append([InlineKeyboardButton("🔙 返回", callback_data="weather_cancel")])
-
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    msg = (
-        "🌤️ <b>欢迎使用天气查询助手</b>\n\n"
-        "📖 请输入你想查询的 <b>城市名</b>，或直接点击下方常用城市按钮。⏬\n\n"
-        "如需退出，请点击下方 “🔙 返回” 按钮即可。"
-    )
+async def weather_entry(update: Update, context: CallbackContext):
+    # 回复用户，提示发送位置或输入城市名
+    keyboard = [
+        [
+            KeyboardButton("取消天气查询"),
+            KeyboardButton("发送当前位置", request_location=True),
+            KeyboardButton("杭州市西湖区"),
+        ],
+        [
+            KeyboardButton("杭州市富阳区"),
+            KeyboardButton("河南省漯河市"),
+            KeyboardButton("香港特别行政区"),
+        ],
+    ]
+    reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
     await update.effective_chat.send_message(
-        msg,
-        reply_markup=reply_markup,
-        parse_mode="HTML"
+        "请发送你的位置，或直接输入城市/区县名称（如“杭州市西湖区”）：",
+        reply_markup=reply_markup
     )
     return WEATHER_INPUT
 
