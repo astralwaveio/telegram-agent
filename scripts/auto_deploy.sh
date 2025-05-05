@@ -68,14 +68,11 @@ if [ ! -d venv ]; then
     error "虚拟环境创建失败，请检查 python3-venv 是否已安装、磁盘空间和权限"
     exit 1
 fi
-ls -al venv || true
-ls -al venv/bin || true
 success "虚拟环境创建完成"
 
 line
 info "3. 激活 Python 虚拟环境"
 echo "当前目录: $(pwd)"
-ls -al
 if [ ! -f venv/bin/activate ]; then
     error "找不到 venv/bin/activate，虚拟环境未正确创建！"
     exit 1

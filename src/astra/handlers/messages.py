@@ -1,6 +1,6 @@
 import logging
 
-from telegram import (Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove)
+from telegram import (Update, InlineKeyboardButton, InlineKeyboardMarkup)
 from telegram.ext import (ContextTypes)
 
 from src.astra.constants import CHAT_INPUT, EXPRESS_INPUT, NEWS_INPUT, TOOLS_INPUT, REMIND_INPUT, WEATHER_INPUT, \
@@ -14,10 +14,6 @@ logger = logging.getLogger("message")
 # =======================
 async def chat_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.effective_chat.send_message("🚧 智能对话功能正在开发中，敬请期待！")
-    await update.effective_chat.send_message(
-        "",
-        reply_markup=ReplyKeyboardRemove()
-    )
     return CHAT_INPUT
 
 
@@ -39,19 +35,11 @@ async def weather_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=reply_markup,
         parse_mode="HTML"
     )
-    await update.effective_chat.send_message(
-        "",
-        reply_markup=ReplyKeyboardRemove()
-    )
     return WEATHER_INPUT
 
 
 async def express_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.effective_chat.send_message("🚧 快递查询功能正在开发中，敬请期待！")
-    await update.effective_chat.send_message(
-        "",
-        reply_markup=ReplyKeyboardRemove()
-    )
     return EXPRESS_INPUT
 
 
@@ -66,26 +54,14 @@ async def news_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="HTML",
         reply_markup=reply_markup
     )
-    await update.effective_chat.send_message(
-        "",
-        reply_markup=ReplyKeyboardRemove()
-    )
     return NEWS_INPUT
 
 
 async def tools_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.effective_chat.send_message("🚧 工具箱功能正在开发中，敬请期待！")
-    await update.effective_chat.send_message(
-        "",
-        reply_markup=ReplyKeyboardRemove()
-    )
     return TOOLS_INPUT
 
 
 async def remind_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.effective_chat.send_message("🚧 任务提醒功能正在开发中，敬请期待！")
-    await update.effective_chat.send_message(
-        "",
-        reply_markup=ReplyKeyboardRemove()
-    )
     return REMIND_INPUT
