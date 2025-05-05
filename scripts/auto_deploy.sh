@@ -25,6 +25,18 @@ if ! command -v python3 &>/dev/null; then
 else
     success "Python3 已安装"
 fi
+info "检查 python3-venv 依赖"
+if ! python3 -m venv --help &>/dev/null; then
+    warn "python3-venv 未安装，正在尝试安装..."
+    sudo apt-get update && sudo apt-get install -y python3-venv
+    if ! python3 -m venv --help &>/dev/null; then
+        error "python3-venv 安装失败，请手动检查！"
+        exit 1
+    fi
+    success "python3-venv 已安装"
+else
+    success "python3-venv 已安装"
+fi
 
 line
 info "2. 检查 Python 虚拟环境"
@@ -33,16 +45,24 @@ if [ -d venv ]; then
 else
     info "Python 虚拟环境不存在，正在创建..."
     python3 -m venv venv
+    if [ ! -d venv ]; then
+        error "虚拟环境创建失败，请检查 python3-venv 是否已安装"
+        exit 1
+    fi
     success "虚拟环境创建完成"
 fi
 
 line
 info "3. 激活 Python 虚拟环境"
+if [ ! -f venv/bin/activate ]; then
+    error "找不到 venv/bin/activate，虚拟环境未正确创建！"
+    exit 1
+fi
 source venv/bin/activate
 success "虚拟环境已激活"
 
 line
-info "4. 安装依赖（静默模式）"
+info "4. 安装依赖"
 # pip install --upgrade pip 静默
 python -m pip install --upgrade pip --quiet || { error "pip 升级失败"; exit 2; }
 
