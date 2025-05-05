@@ -3,7 +3,11 @@ import os
 from collections import defaultdict
 
 import requests
+from dotenv import load_dotenv
 from rapidfuzz import process, fuzz
+
+load_dotenv()
+weather_token = os.getenv("CAIYUN_TOKEN")
 
 
 class CaiyunWeatherClient:
@@ -28,9 +32,6 @@ class CaiyunWeatherClient:
         """
         :param version: 可选，API版本。None或未传为v2.6，传3为v3
         """
-        self.token = os.getenv("CAIYUN_TOKEN")
-        if not self.token:
-            raise ValueError("请设置CAIYUN_TOKEN环境变量或传入token参数")
         # 兼容 client = CaiyunWeatherClient(3) 这种写法
         if isinstance(version, int) or (isinstance(version, str) and version == "3"):
             self.version = "v3"
@@ -45,7 +46,7 @@ class CaiyunWeatherClient:
         lng, lat = location
         path = self.API_PATHS[api_type].format(
             version=self.version,
-            token=self.token,
+            token=weather_token,
             lng=lng,
             lat=lat
         )
