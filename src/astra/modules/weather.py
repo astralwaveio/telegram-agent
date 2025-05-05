@@ -1,3 +1,4 @@
+import datetime
 import os
 
 import requests
@@ -83,13 +84,23 @@ async def weather_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ConversationHandler.END
 
 
+def get_weekday(date_str):
+    """将日期字符串转为周几"""
+    try:
+        dt = datetime.datetime.strptime(date_str, "%Y-%m-%d")
+        week_map = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+        return week_map[dt.weekday()]
+    except ValueError:
+        return ""
+
+
 def get_weather_detail(lon, lat):
-    """获取详细天气信息（7天预报+生活指数+实时）"""
+    """获取详细天气信息（3天预报+生活指数+实时）"""
     caiyun_token = os.environ.get("CAIYUN_TOKEN")
     # 实时天气
     realtime_url = f"https://api.caiyunapp.com/v2.6/{caiyun_token}/{lon},{lat}/realtime"
-    # 7天预报+生活指数
-    daily_url = f"https://api.caiyunapp.com/v2.6/{caiyun_token}/{lon},{lat}/daily?dailysteps=7"
+    # 3天预报+生活指数
+    daily_url = f"https://api.caiyunapp.com/v2.6/{caiyun_token}/{lon},{lat}/daily?dailysteps=3"
     try:
         realtime = requests.get(realtime_url, timeout=5).json()
         daily = requests.get(daily_url, timeout=5).json()
@@ -104,7 +115,6 @@ def get_weather_detail(lon, lat):
         wind_str = f"{wind_speed} m/s" if wind_speed is not None else "未知"
         aqi = rt.get("air_quality", {}).get("aqi", {}).get("chn", None)
         aqi_str = f"{aqi}" if aqi is not None else "未知"
-
         # 解析生活指数（当天）
         life_index = daily.get("result", {}).get("daily", {}).get("life_index", {})
         dressing = life_index.get("dressing", [{}])[0]
@@ -115,20 +125,21 @@ def get_weather_detail(lon, lat):
         cold_desc = cold.get("desc", "暂无建议")
         car_washing = life_index.get("carWashing", [{}])[0]
         car_washing_desc = car_washing.get("desc", "暂无建议")
-
-        # 解析7天预报
+        # 解析3天预报
         daily_data = daily.get("result", {}).get("daily", {})
-        dates = daily_data.get("date", [])
         skycons = daily_data.get("skycon", [])
-        temp_max = daily_data.get("temperature", [])
-        msg_7d = ""
-        for i in range(min(7, len(dates))):
-            day = dates[i]
-            sky = skycon_desc(skycons[i]['value'])[0] if i < len(skycons) else "未知"
-            tmax = temp_max[i]['max'] if i < len(temp_max) else "?"
-            tmin = temp_max[i]['min'] if i < len(temp_max) else "?"
-            msg_7d += f"{day[5:]} {sky} {tmin}~{tmax}℃\n"
-
+        temperatures = daily_data.get("temperature", [])
+        days = min(3, len(skycons), len(temperatures))
+        # 优化样式：表格+emoji+周几
+        msg_3d = "<b>日期   天气   温度</b>\n"
+        for i in range(days):
+            date_str = skycons[i].get('date', '')[:10] if 'date' in skycons[i] else "未知日期"
+            week = get_weekday(date_str)
+            date_fmt = date_str[5:] if len(date_str) == 10 else date_str
+            sky, sky_emoji = skycon_desc(skycons[i].get('value', ''))
+            tmax = temperatures[i].get('max', '?')
+            tmin = temperatures[i].get('min', '?')
+            msg_3d += f"{date_fmt} {week} {sky_emoji}{sky:<4} {tmin}~{tmax}℃\n"
         # 组装消息
         msg = (
             f"{emoji} <b>当前天气</b>\n"
@@ -141,8 +152,8 @@ def get_weather_detail(lon, lat):
             f"🌞 <b>紫外线</b>：{uv_desc}\n"
             f"🤧 <b>感冒风险</b>：{cold_desc}\n"
             f"🚗 <b>洗车指数</b>：{car_washing_desc}\n"
-            f"\n📅 <b>未来7天天气</b>：\n"
-            f"<pre>{msg_7d}</pre>\n数据来源：彩云天气"
+            f"\n📅 <b>未来3天天气</b>：\n"
+            f"<pre>{msg_3d}</pre>"
         )
         return msg
     except Exception as e:
