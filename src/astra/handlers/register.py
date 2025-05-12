@@ -11,7 +11,7 @@ from src.astra.handlers.commands import start_command, help_command, tools_comma
     settings_command, about_command, cancel_service
 from src.astra.handlers.messages import aichat_entry, weather_entry, express_entry, news_entry, tools_entry, \
     remind_entry
-from src.astra.modules.aichat import aichat_model_selected, aichat_user_input
+from src.astra.modules.aichat import aichat_model_selected, aichat_user_input, aichat_type_input
 from src.astra.modules.weather import weather_input
 
 filterwarnings(action="ignore", message=r".*CallbackQueryHandler", category=PTBUserWarning)
@@ -50,9 +50,10 @@ def register_all_conversations(application):
         entry_points=[MessageHandler(filters.Regex(r"^💬\s*AI对话$"), aichat_entry)],
         states={
             AICHAT_INPUT: [
-                MessageHandler(filters.Regex(r"^🤖选择模型$") & ~filters.COMMAND, aichat_model_selected),
+                MessageHandler(filters.Regex(r"^🤖选择服务$") & ~filters.COMMAND, aichat_type_input),
                 MessageHandler(filters.Regex(r"^🤖取消$") & ~filters.COMMAND,
                                partial(cancel_service, service_name="AI对话服务")),
+                MessageHandler(filters.TEXT & ~filters.COMMAND, aichat_model_selected),
                 MessageHandler(filters.TEXT & ~filters.COMMAND, aichat_user_input),
             ]
         },

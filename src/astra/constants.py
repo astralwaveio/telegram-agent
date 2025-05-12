@@ -20,7 +20,13 @@ KNOWN_COMMANDS = {"start", "help", "news", "remind", "tools", "cancel", "setting
 # =======================
 # AI模型配置
 # =======================
-# src/astra/constants.py
+MODEL_TYPE_MAP = {
+    "ChatGPT": "ChatGPT",
+    "Claude": "Claude",
+    "DeepSeek": "DeepSeek",
+    "Qwen": "Qwen",
+}
+
 MODEL_CONFIG = {
     "ChatGPT": [
         # (模型名, 描述)
