@@ -12,9 +12,9 @@ async def aichat_chatgpt_input(update, context):
     # 构建 ChatGPT 模型选择键盘
     models_keyboard = [
         [
-            KeyboardButton("🤖ChatGPT4.1"),
-            KeyboardButton("🤖ChatGPT4o"),
-            KeyboardButton("🤖ChatGPTo3"),
+            KeyboardButton("🤖4.1"),
+            KeyboardButton("🤖4o"),
+            KeyboardButton("🤖o3"),
             KeyboardButton("返回主菜单"),
         ]
     ]
@@ -30,8 +30,8 @@ async def aichat_chatgpt_input(update, context):
 async def aichat_claude_input(update, context):
     models_keyboard = [
         [
-            KeyboardButton("🤖Claude 2"),
-            KeyboardButton("🤖Claude 3"),
+            KeyboardButton("🤖3-7-sonnet"),
+            KeyboardButton("🤖3-5-haiku"),
             KeyboardButton("返回主菜单"),
         ]
     ]
