@@ -50,7 +50,9 @@ def register_all_conversations(application):
         entry_points=[MessageHandler(filters.Regex(r"^💬\s*AI对话$"), aichat_entry)],
         states={
             AICHAT_INPUT: [
-                MessageHandler(filters.Regex(r"^🤖模型选择$") & ~filters.COMMAND, aichat_model_selected),
+                MessageHandler(filters.Regex(r"^🤖选择模型$") & ~filters.COMMAND, aichat_model_selected),
+                MessageHandler(filters.Regex(r"^🤖取消$") & ~filters.COMMAND,
+                               partial(cancel_service, service_name="AI对话服务")),
                 MessageHandler(filters.TEXT & ~filters.COMMAND, aichat_user_input),
             ]
         },

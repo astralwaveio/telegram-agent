@@ -15,12 +15,7 @@ async def aichat_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # 回复用户，提示发送位置或输入城市名
     type_keyboard = [
         [
-            KeyboardButton("🤖ChatGPT"),
-            KeyboardButton("🤖Claude"),
-        ],
-        [
-            KeyboardButton("🤖DeepSeek"),
-            KeyboardButton("🤖阿里千问"),
+            KeyboardButton("🤖选择模型"),
         ],
     ]
     reply_markup = ReplyKeyboardMarkup(type_keyboard, one_time_keyboard=True, resize_keyboard=True)
