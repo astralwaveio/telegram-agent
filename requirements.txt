@@ -42,3 +42,5 @@ tornado==6.4.2
 idna==3.10
 asyncio==3.4.3
 rapidfuzz==3.13.0
+azure-ai-inference==1.0.0b9
+azure-core~=1.34.0
