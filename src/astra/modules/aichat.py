@@ -25,22 +25,20 @@ def build_model_keyboard(model_type):
     keyboard = []
     row = []
     for idx, (model, desc) in enumerate(models):
-        # 按钮内容：模型名（简短描述）
-        btn_text = f"{model}（{desc.split('：')[0]}）" if '：' in desc else f"{model}（{desc}）"
+        btn_text = f"{model}（{desc}）"
         row.append(KeyboardButton(btn_text))
         if len(row) == 2:
             keyboard.append(row)
             row = []
     if row:
         keyboard.append(row)
-    # 最后一行加返回主菜单
-    keyboard.append([KeyboardButton("主菜单")])
+    keyboard.append([KeyboardButton("返回主菜单")])
     return ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
 
 
+
 def extract_model_name(btn_text):
-    # 匹配“模型名（描述）”
-    m = re.match(r"^([^（(]+)", btn_text)
+    m = re.match(r"^([^\（(]+)", btn_text)
     return m.group(1).strip() if m else btn_text
 
 

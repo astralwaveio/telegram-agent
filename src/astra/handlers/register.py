@@ -17,6 +17,9 @@ from src.astra.modules.weather import weather_input
 filterwarnings(action="ignore", message=r".*CallbackQueryHandler", category=PTBUserWarning)
 
 
+chat_type_regex = r"^(ChatGPT|Claude|DeepSeek|Qwen)$"
+
+
 def register_all_handlers(application):
     """
     注册所有处理器
@@ -51,6 +54,7 @@ def register_all_conversations(application):
         states={
             AICHAT_INPUT: [
                 MessageHandler(filters.Regex(r"^🤖选择服务$") & ~filters.COMMAND, aichat_type_input),
+                MessageHandler(filters.Regex(chat_type_regex) & ~filters.COMMAND, aichat_type_selected),
                 MessageHandler(filters.Regex(r"^🤖取消$") & ~filters.COMMAND,
                                partial(cancel_service, service_name="AI对话服务")),
                 MessageHandler(filters.TEXT & ~filters.COMMAND, aichat_model_selected),

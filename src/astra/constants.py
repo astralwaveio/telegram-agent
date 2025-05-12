@@ -29,27 +29,27 @@ MODEL_TYPE_MAP = {
 
 MODEL_CONFIG = {
     "ChatGPT": [
-        # (模型名, 描述)
-        ("gpt-4.1", "全能旗舰：高精度复杂任务（长文档分析、代码生成、专业问答）"),
-        ("gpt-4.1-mini", "高效经济：日常任务（客服、文案、快速响应需求）"),
-        ("o3", "推理+多模态：数学/科学/图像分析（科研、商业决策）"),
-        ("o4-mini", "数学专精：计算密集型任务（数学竞赛、数据分析）"),
+        ("gpt-4.1", "旗舰"),
+        ("gpt-4.1-mini", "经济"),
+        ("o3", "多模态"),
+        ("o4-mini", "数学"),
     ],
     "Claude": [
-        ("claude-3-7-sonnet-latest", "最智能的模型"),
-        ("claude-3-5-haiku-latest", "最快的模型"),
+        ("claude-3-7-sonnet-latest", "智能"),
+        ("claude-3-5-haiku-latest", "极速"),
     ],
     "DeepSeek": [
-        ("deepseek-chat", "通用对话"),
-        ("deepseek-reasoner", "推理专长"),
+        ("deepseek-chat", "通用"),
+        ("deepseek-reasoner", "推理"),
     ],
     "Qwen": [
-        ("qwen-max-latest", "全能旗舰：复杂多步骤任务（高精度需求，如深度分析、代码生成）"),
-        ("qwen-turbo-latest", "极速低成本：高频轻量任务（客服、简单问答、实时响应）"),
-        ("qwen-long-latest", "长文本均衡：超长上下文处理（文档总结、法律/科研文本分析）"),
-        ("qwen-omni-turbo-latest", "多模态：图文混合任务（图像理解、跨模态生成）"),
+        ("qwen-max-latest", "旗舰"),
+        ("qwen-turbo-latest", "极速"),
+        ("qwen-long-latest", "长文本"),
+        ("qwen-omni-turbo-latest", "多模态"),
     ],
 }
+
 
 MODEL_PROMPTS = {
     "gpt-4.1": "你是一个全能旗舰AI助手，擅长高精度复杂任务（如长文档分析、代码生成、专业问答）。请用中文详细、专业地回答用户问题。",
