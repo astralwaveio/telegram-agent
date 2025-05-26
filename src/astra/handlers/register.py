@@ -11,11 +11,10 @@ from src.astra.handlers.commands import start_command, help_command, tools_comma
     settings_command, about_command, cancel_service
 from src.astra.handlers.messages import aichat_entry, weather_entry, express_entry, news_entry, tools_entry, \
     remind_entry
-from src.astra.modules.aichat import aichat_model_selected, aichat_user_input, aichat_type_input
+from src.astra.modules.aichat import aichat_model_selected, aichat_user_input, aichat_type_input, aichat_type_selected
 from src.astra.modules.weather import weather_input
 
 filterwarnings(action="ignore", message=r".*CallbackQueryHandler", category=PTBUserWarning)
-
 
 chat_type_regex = r"^(ChatGPT|Claude|DeepSeek|Qwen)$"
 
