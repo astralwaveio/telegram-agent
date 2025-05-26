@@ -35,7 +35,6 @@ ALERT_LEVEL_MAP = {
 }
 
 CAIYUN_TOKEN = os.environ.get("CAIYUN_TOKEN")
-TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
 # 杭州市经纬度
 ALERT_LON, ALERT_LAT = 119.929075, 30.092843
@@ -82,7 +81,6 @@ async def listen_weather(application):
                         if alert_id not in pushed_alert_ids:
                             msg = format_alert(alert)
                             await application.send_message(
-                                chat_id=TELEGRAM_CHAT_ID,
                                 text=msg,
                                 parse_mode="HTML"
                             )
